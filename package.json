@@ -1,0 +1,37 @@
+{
+  "name": "safeapi-client",
+  "version": "1.0.0",
+  "description": "criptografically signed fetch requests",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hacknlove/safeapi-client.git"
+  },
+  "keywords": [
+    "fetch",
+    "cryptographic",
+    "security"
+  ],
+  "author": "Antonio Fernandez Porrua <antonio@hacknlove.org> (https://pykiss.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hacknlove/safeapi-client/issues"
+  },
+  "homepage": "https://github.com/hacknlove/safeapi-client#readme",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "node-jose": "^1.1.3",
+    "sha.js": "^2.4.11"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0"
+  }
+}
