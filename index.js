@@ -47,7 +47,7 @@ async function signedFetchParameters (url, options = {}) {
     }
   ]
 }
-setCredentials (credentials) {
+function setCredentials (credentials) {
   pem = credentials.pem || pem
   uuid = credentials.uuid || uuid
   algorithm = credentials.algorithm || algorithm || 'ES384',
