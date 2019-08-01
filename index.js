@@ -50,8 +50,7 @@ async function signedFetchParameters (url, options = {}) {
 function setCredentials (credentials) {
   pem = credentials.pem || pem
   uuid = credentials.uuid || uuid
-  algorithm = credentials.algorithm || algorithm || 'ES384',
-  creation
+  algorithm = credentials.algorithm || algorithm || 'ES384'
 }
 async function sign (options = {}) {
   console.log(sign.credentials)
@@ -72,7 +71,7 @@ async function sign (options = {}) {
   }, pem, {
     algorithm: algorithm,
     expiresIn
-  }).substr(beheadJWT)
+  })
 }
 async function createKey () {
   const key = await jose.JWK.createKey(...creation[algorithm])
