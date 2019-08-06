@@ -19,6 +19,9 @@ var creation = {
 }
 
 async function signedFetchParameters (url, options = {}) {
+  if (!pem) {
+    return [url, options]
+  }
   const {
     method,
     body,
@@ -29,10 +32,10 @@ async function signedFetchParameters (url, options = {}) {
     method,
     url,
     body
-  })
+  }).catch(e => console.error(e))
 
   if (!Authorization) {
-    return undefined
+    return [url, options]
   }
   return [
     url, {
@@ -57,7 +60,7 @@ function setCredentials (credentials) {
 async function sign (options = {}) {
   const {
     method = 'GET',
-    body = options.body = {},
+    body = {},
     url = '/',
     expiresIn = 120
   } = options

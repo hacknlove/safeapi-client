@@ -54,6 +54,37 @@ async function example1 () {
 }
 ```
 
+## API
+
+### `createKey()`
+Creates a new key.
+
+The public key needs to be attached with an UUID by the server, before it can be used.
+
+### `setCredentials({pem: '...', uuid: '...', algorithm: '...'})`
+
+It is used to set the pem, the uuid, and algorithm to be used.
+
+### `signFetchParameters(url, options)`
+
+`url` and `options` are the parameters you want to use with `fetch`
+
+Returns an array [url, options] with the apropiate Authorization headers so you can do `fetch(...signFetchParameters(url, options))` or `fetchHelper(signFetchParameters(url, options))`
+
+[@hacknlove/fetchhelper](https://github.com/hacknlove/fetchHelper)
+
+if there is no credentials, it returns [url, options] without sign it.
+
+### `sign(options)`
+
+Options is a dictionary with:
+* `method` defaults to `'GET'`
+* `body` defaults to `{}`
+* `url` defaults to `'/'`
+* `expiresIn` defaults to `120`
+
+Returns the token that sign that request
+
 ## Token
 
 If, for some reason, you need only the token you can get it with `sign`
