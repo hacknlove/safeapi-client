@@ -7,97 +7,108 @@ npm i safeapi-client
 
 ## Usage
 ```javascript
-import signFetchParameters, { createKey, setCredentials } from 'safeapi-client
-import fetchHelper from '@hacknlove/fetchHelper'
+import SafeApi from 'safeapi-client'
 
 async function example1 () {
-  /* Create a key */
-  const keys = createKey()
+  const safeApi = new SafeApi()
+  safeApi.newPem()
 
-  /*
-    Option 1.
-    You upload the key, and the server gives you an uuid
-    It could be some thing like:
-  */
   const [ uuid ] = await fetchHelper('/api/newKey', {
     method: 'POST',
-    body: JSON.stringify(keys.private),
+    body: JSON.stringify(safeApi.public),
     headers: {
       'Content-Type': 'application/json'
     }
   })
 
-  /*
-    Option 2.
-    You have yet some unique id, and you want to attach the key to it
-    It could be some thing like:
-  */
-  setCredentialsawait fetchHelper(`/api/setKey/${uuid}`, {
-    method: 'PUT',
-    body: JSON.stringify(keys.private),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-
-  /* Anyway, your credentials are the pair uuid and privatekey*/
-  setCredentials({
-    uuid,
-    pem: keys.private
-  })
-
-
-  /* Now you can sign your requests */
-
-  fetch(signFetchParameters(url, options))
-
+  safeApi.fetch(url, options)
 }
 ```
 
 ## API
 
-### `createKey()`
-Creates a new key.
+### `new SafeApi(options)`
+Creates a new safeApi instance
+
+In options you can set
+
+* `pem`: Private key in PEM format
+* `uuid`: The uuid that identifies the key in the server
+* `algorithm`: One of `"RS256"` `"RS384"` `"RS512"` `"PS256"` `"PS384"` `"PS512"` `"ES256"` `"ES384"` `"ES512"`
+* `password`: The clientside password to save and read private key
+* `expiresIn`: Seconds that last valid the signed requests
 
 The public key needs to be attached with an UUID by the server, before it can be used.
 
-### `setCredentials({pem: '...', uuid: '...', algorithm: '...'})`
+### `fetch(url, options)`
 
-It is used to set the pem, the uuid, and algorithm to be used.
+`url` and `options` are the parameters you want to use with browser's `fetch`
 
-### `signFetchParameters(url, options)`
+returns `[response, error]`
 
-`url` and `options` are the parameters you want to use with `fetch`
+### `.fromFile()`
+Open a openfile dialog to select a saved credentials, and then load it.
 
-Returns an array [url, options] with the apropiate Authorization headers so you can do `fetch(...signFetchParameters(url, options))` or `fetchHelper(signFetchParameters(url, options))`
+return `this`
 
-[@hacknlove/fetchhelper](https://github.com/hacknlove/fetchHelper)
+### `.fromLocalStorage()`
+Load the credentials from `localStorage.safeApi`
 
-if there is no credentials, it returns [url, options] without sign it.
+return `this`
 
-### `sign(options)`
+### `.fromText(text)`
+Load the credentials from `text`
 
-Options is a dictionary with:
-* `method` defaults to `'GET'`
-* `body` defaults to `{}`
-* `url` defaults to `'/'`
-* `expiresIn` defaults to `120`
+return `this`
 
-Returns the token that sign that request
+### `.hash(request)`
+Returns the sha256 of the request, like the one that is used to sign the request.
 
-## Token
+* `method`: `DELETE`, `GET`, `POST`, `PUT`...
+* `url`: the url of the request
+* `body`: the body of the request
 
-If, for some reason, you need only the token you can get it with `sign`
+If the body is JSON, do not stringify it.
 
-```javascript
-import { sign } from 'safeapi-client
+### `.memorizePassword()`
+Store the hashed password at `localStorage.safeApi` and returns `this`
 
-async function example2 () {
-  /* setCredentials have been called before */
+### `.newPem()`
+Creates a new pem
 
+Returns `this`
 
-  const token = await sign(url, options)
-  /* Token is the token valid for the request fetch(url, options) with the credentials uuid, key*/
+### `.password = xxxxx`
+Setter that hash the password
 
-}
-```
+return this
+
+### `.public`
+Getter that returns the public pem
+
+### `.rememberPassword`
+Recover the hashed password from `localStorage.password`
+
+### `.sign(request)`
+
+Return a signed jwt for the request.
+
+* `method`: `DELETE`, `GET`, `POST`, `PUT`...
+* `url`: the url of the request
+* `body`: the body of the request
+* `expiresIn`: Overrides this.expiresIn
+
+If the body is JSON, do not stringify it.
+
+### `.toFile()`
+Save a file with the encrypted credentials
+
+return `this`
+
+### `.toLocalStorage`
+Store the encrypted credentials in `localStorage.safeApi`
+
+return `this`
+
+### `.toText()`
+Returns the encrypted credentials
