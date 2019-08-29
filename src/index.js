@@ -29,17 +29,12 @@ async function keyPOST (self, data, server) {
       'Content-Type': 'application/json'
     }
   })
-  if (error) {
-    throw error
-  }
-  if (uuid.error) {
-    throw uuid
-  }
   self.uuid = uuid
+  return [uuid, error]
 }
 
 async function keyPUT (self, data, server) {
-  var [uuid, error] = await fetchHelper(`${server}key/${self.uuid}`, {
+  return fetchHelper(`${server}key/${self.uuid}`, {
     method: 'PUT',
     json: {
       ...data,
@@ -49,12 +44,6 @@ async function keyPUT (self, data, server) {
       'Content-Type': 'application/json'
     }
   })
-  if (error) {
-    throw error
-  }
-  if (uuid.error) {
-    throw uuid
-  }
 }
 
 class SafeApi {
