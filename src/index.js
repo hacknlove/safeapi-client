@@ -58,7 +58,7 @@ async function keyPUT (self, data, server) {
 }
 
 class SafeApi {
-  constructor (options) {
+  constructor (options = {}) {
     var pem = options.pem
     var password = options.password
 
