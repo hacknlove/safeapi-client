@@ -23,7 +23,7 @@ async function keyPOST (self, data, server) {
     method: 'POST',
     json: {
       ...data,
-      publicKey: this.public
+      publicKey: self.public
     },
     headers: {
       'Content-Type': 'application/json'
@@ -38,7 +38,7 @@ async function keyPUT (self, data, server) {
     method: 'PUT',
     json: {
       ...data,
-      publicKey: this.public
+      publicKey: self.public
     },
     headers: {
       'Content-Type': 'application/json'
