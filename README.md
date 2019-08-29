@@ -1,5 +1,7 @@
 # safeapi-client
 
+# NOT USE. NOT PRODUCTION READY. EARLY DEVELOPMENT STAGE
+
 ## Install
 ```
 npm i safeapi-client
