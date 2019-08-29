@@ -7,59 +7,61 @@ npm i safeapi-client
 
 ## Usage
 ```javascript
-import SafeApi from 'safeapi-client'
+import safeApi from 'safeapi-client'
 
 async function example1 () {
-  const safeApi = new SafeApi()
-  safeApi.newPem()
+  await safeApi.newKey()
+  await safeApi.uploadPublicKey('https://example.com/')
+  safeApi.toLocalStorage()
 
-  const [ uuid ] = await fetchHelper('/api/newKey', {
-    method: 'POST',
-    body: JSON.stringify(safeApi.public),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
+  // ...
 
-  safeApi.fetch(url, options)
+  const [ response, error ] = safeApi.fetch('endpoint', options) // https://example.com/endpoint
+}
+```
+
+```javascript
+import safeApi from 'safeapi-client'
+
+async function example1 () {
+  safeApi.server = 'https://example.com/'
+  safeApi.fromLocalStorage()
+
+  const [ response, error ] = safeApi.fetch('endpoint', options) // https://example.com/endpoint
 }
 ```
 
 ## API
 
 ### `new SafeApi(options)`
+```
 Creates a new safeApi instance
 
 In options you can set
 
-* `pem`: Private key in PEM format
+* `pem`: Private key in PEM format. If you set the private key this way, you must wait the promise this.wait to resolve, before use anything related with the public key.
 * `uuid`: The uuid that identifies the key in the server
 * `algorithm`: One of `"RS256"` `"RS384"` `"RS512"` `"PS256"` `"PS384"` `"PS512"` `"ES256"` `"ES384"` `"ES512"`
 * `password`: The clientside password to save and read private key
 * `expiresIn`: Seconds that last valid the signed requests
+* public: in case you set manually the private key, you can
 
-The public key needs to be attached with an UUID by the server, before it can be used.
 
-### `fetch(url, options)`
+
+### `async fetch(url, options)`
 
 `url` and `options` are the parameters you want to use with browser's `fetch`
 
 returns `[response, error]`
 
-### `.fromFile()`
-Open a openfile dialog to select a saved credentials, and then load it.
+### `async .fromFile()`
+Open a openfile dialog to select a saved credentials file, and then load it.
 
-return `this`
-
-### `.fromLocalStorage()`
+### `async .fromLocalStorage()`
 Load the credentials from `localStorage.safeApi`
 
-return `this`
-
-### `.fromText(text)`
+### `async .fromText(text)`
 Load the credentials from `text`
-
-return `this`
 
 ### `.hash(request)`
 Returns the sha256 of the request, like the one that is used to sign the request.
@@ -71,20 +73,17 @@ Returns the sha256 of the request, like the one that is used to sign the request
 If the body is JSON, do not stringify it.
 
 ### `.memorizePassword()`
-Store the hashed password at `localStorage.safeApi` and returns `this`
+Store the hashed password at `localStorage.safeApiPassword`
 
-### `.newPem()`
-Creates a new pem
+### `async .newKey()`
+Creates a new pair of keys, private and public
 
-Returns `this`
-
-### `.password = xxxxx`
+### `.setPassword(password)`
 Setter that hash the password
 
-return this
-
 ### `.public`
-Getter that returns the public pem
+Atribute with the public key in PEM format.
+Readonly. Do not use it to set a public key.
 
 ### `.rememberPassword`
 Recover the hashed password from `localStorage.password`
@@ -103,12 +102,16 @@ If the body is JSON, do not stringify it.
 ### `.toFile()`
 Save a file with the encrypted credentials
 
-return `this`
-
 ### `.toLocalStorage`
 Store the encrypted credentials in `localStorage.safeApi`
 
-return `this`
-
 ### `.toText()`
 Returns the encrypted credentials
+
+### `uploadPublicKey(data, server?)`
+Sends the public key to the safeApi-server indicated by the parameter `server` or by `this.server`
+
+if exists `this.uuid` it performs a `PUT` to update the public key asigned to that `uuid`.
+if not, it performs a `POST`, and assings the returned `uuid` to `this.uuid`
+
+In `data` you can set more parameters to be sent in the json

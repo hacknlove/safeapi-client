@@ -18,67 +18,122 @@ const creation = {
   ES512: ['EC', 'P-512']
 }
 
+async function keyPOST (self, data, server) {
+  var [uuid, error] = await fetchHelper(`${server}key`, {
+    method: 'POST',
+    json: {
+      ...data,
+      publicKey: this.public
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  if (error) {
+    throw error
+  }
+  if (uuid.error) {
+    throw uuid
+  }
+  self.uuid = uuid
+}
+
+async function keyPUT (self, data, server) {
+  var [uuid, error] = await fetchHelper(`${server}key/${self.uuid}`, {
+    method: 'PUT',
+    json: {
+      ...data,
+      publicKey: this.public
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  if (error) {
+    throw error
+  }
+  if (uuid.error) {
+    throw uuid
+  }
+}
+
 class SafeApi {
   constructor (options) {
-    const {
-      pem,
-      uuid,
-      algorithm,
-      password,
-      expiresIn
-    } = options
-    this.pem = pem || ''
-    this.uuid = uuid || ''
-    this.algorithm = algorithm || 'ES384'
-    this.password = passtokey(password)
-    this.expiresIn = expiresIn || 120
-  }
+    var pem = options.pem
+    var password = options.password
 
-  async fromFile () {
-    const text = await new Promise((resolve, reject) => {
-      const clean = setTimeout(() => {
-        reject(new Error('TimedOut'))
-      }, 30000)
+    this.uuid = options.uuid || false
+    this.algorithm = options.algorithm || 'ES384'
+    this.expiresIn = options.expiresIn || 120
+    this.server = options.server || ''
 
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = '.key'
-      input.click()
-      input.onchange = e => {
-        var file = e.target.files[0]
-        var reader = new FileReader()
-        reader.readAsText(file, 'UTF-8')
-        reader.onload = async readerEvent => {
-          clearTimeout(clean)
-          resolve(readerEvent.target.result)
-        }
-      }
-    })
-    await this.fromText(text, this.password)
-    return this
-  }
+    if (pem) {
+      this.wait = new Promise((resolve) => {
+        jose.JWK.asKey(pem, 'pem').then(key => {
+          this.public = key.toPEM(false)
+          resolve()
+        })
+      })
+    }
 
-  async fromLocalStorage () {
-    await this.fromText(localStorage.safeApi, this.password)
-    return this
-  }
+    this.fromText = async (text) => {
+      const credentials = await decrypt(text, password)
+      pem = credentials.pem
 
-  async fromText (text) {
-    const {
-      pem,
-      uuid,
-      algorithm
-    } = await decrypt(text, this.password)
-    this.pem = pem
-    this.uuid = uuid
-    this.algorithm = algorithm
-    return this
+      this.public = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
+      this.uuid = credentials.uuid
+      this.algorithm = credentials.algorithm
+    }
+
+    this.sign = async (options = {}) => {
+      const {
+        method = 'GET',
+        body = {},
+        url = '/',
+        expiresIn
+      } = options
+
+      return jwt.sign({
+        iss: this.uuid,
+        sub: this.hash({
+          body,
+          method,
+          url
+        })
+      }, pem, {
+        algorithm: this.algorithm,
+        expiresIn: expiresIn || this.expiresIn
+      })
+    }
+
+    this.toText = async () => {
+      return encrypt({
+        uuid: this.uuid,
+        pem,
+        algorithm: this.algorithm
+      }, password)
+    }
+
+    this.newKey = async () => {
+      const key = await jose.JWK.createKey(...creation[this.algorithm])
+      pem = key.toPEM(true)
+      this.public = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
+    }
+
+    this.memorizePassword = () => {
+      localStorage.safeApiPassword = password
+    }
+
+    this.setPassword = (password) => {
+      password = passtokey(password || '')
+    }
+
+    this.rememberPassword = () => {
+      password = localStorage.password
+    }
   }
 
   async fetch (url, options = {}) {
-    if (!this.pem) {
-      return [url, options]
-    }
     var {
       method,
       body,
@@ -105,6 +160,33 @@ class SafeApi {
     ])
   }
 
+  async fromFile () {
+    const text = await new Promise((resolve, reject) => {
+      const clean = setTimeout(() => {
+        reject(new Error('TimedOut'))
+      }, 30000)
+
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.key'
+      input.click()
+      input.onchange = e => {
+        var file = e.target.files[0]
+        var reader = new FileReader()
+        reader.readAsText(file, 'UTF-8')
+        reader.onload = async readerEvent => {
+          clearTimeout(clean)
+          resolve(readerEvent.target.result)
+        }
+      }
+    })
+    await this.fromText(text)
+  }
+
+  async fromLocalStorage () {
+    await this.fromText(localStorage.safeApi)
+  }
+
   hash (request) {
     const {
       method = 'GET',
@@ -123,52 +205,6 @@ class SafeApi {
     })).digest('base64')
   }
 
-  memorizePassword () {
-    localStorage.password = this.password
-    return this
-  }
-
-  async newPem () {
-    const key = await jose.JWK.createKey(...creation[this.algorithm])
-    this.pem = key.toPEM(true)
-    return this
-  }
-
-  set password (password) {
-    this.password = passtokey(password || '')
-    return this
-  }
-
-  get public () {
-    return jose.JWK.asKey(this.pem, 'pem').then(key => key.toPEM(false))
-  }
-
-  rememberPassword () {
-    this.password = localStorage.password
-    return this
-  }
-
-  async sign (options = {}) {
-    const {
-      method = 'GET',
-      body = {},
-      url = '/',
-      expiresIn
-    } = options
-
-    return jwt.sign({
-      iss: this.uuid,
-      sub: this.hash({
-        body,
-        method,
-        url
-      })
-    }, this.pem, {
-      algorithm: this.algorithm,
-      expiresIn: expiresIn || this.expiresIn
-    })
-  }
-
   async toFile () {
     const signedCredentials = await this.toText()
 
@@ -181,13 +217,16 @@ class SafeApi {
     localStorage.safeApi = await this.toText()
   }
 
-  async toText () {
-    return encrypt({
-      uuid: this.uuid,
-      pem: this.pem,
-      algorithm: this.algorithm
-    }, this.password)
+  async uploadPublicKey (data, server) {
+    this.server = this.server || server
+    if (!this.uuid) {
+      return keyPOST(this, data, server || this.server)
+    } else {
+      return keyPUT(this, data, server || this.server)
+    }
   }
 }
 
-module.exports = SafeApi
+module.exports = new SafeApi()
+
+module.exports.SafeApi = SafeApi
