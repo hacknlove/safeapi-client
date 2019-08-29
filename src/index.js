@@ -208,11 +208,10 @@ class SafeApi {
 
   async uploadPublicKey (data, server) {
     this.server = this.server || server
-    if (!this.uuid) {
-      return keyPOST(this, data, server || this.server)
-    } else {
-      return keyPUT(this, data, server || this.server)
-    }
+    const [uuid, error] = this.uuid
+      ? await keyPUT(this, data, server || this.server)
+      : await keyPOST(this, data, server || this.server)
+    return [uuid, error]
   }
 }
 
