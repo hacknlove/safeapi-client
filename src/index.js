@@ -5,6 +5,8 @@ const saveAs = require('file-saver')
 const { decrypt, encrypt } = require('./symetric')
 const { passtokey } = require('./passtokey')
 const fetchHelper = require('@hacknlove/fetchhelper')
+const store = require('@hacknlove/reduxplus')
+require('@hacknlove/substore')
 
 const creation = {
   RS256: ['RSA', 256],
@@ -29,7 +31,9 @@ async function keyPOST (self, data, server) {
       'Content-Type': 'application/json'
     }
   })
-  self.uuid = uuid
+  if (self.uuid && !self.uuid.error) {
+    self.uuid = uuid
+  }
   return [uuid, error]
 }
 
@@ -51,11 +55,12 @@ class SafeApi {
     var pem = options.pem
     var password = options.password
 
-    this.uuid = options.uuid || false
+    this.uuid = options.uuid || ''
     this.algorithm = options.algorithm || 'ES384'
     this.expiresIn = options.expiresIn || 120
     this.server = options.server || ''
-
+    this.storeAddress = `safeapi-client/${this.server}/${this.uuid}`
+    this.store = store.subStore(this.storeAddress)
     if (pem) {
       this.wait = new Promise((resolve) => {
         jose.JWK.asKey(pem, 'pem').then(key => {

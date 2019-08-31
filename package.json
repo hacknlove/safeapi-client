@@ -26,8 +26,11 @@
   "homepage": "https://github.com/hacknlove/safeapi-client#readme",
   "dependencies": {
     "@hacknlove/fetchhelper": "^1.4.1",
+    "@hacknlove/reduxplus": "^1.5.2",
+    "@hacknlove/substore": "git+https://github.com/hacknlove/substore.git",
     "ava": "^2.3.0",
     "file-saver": "^2.0.2",
+    "isdifferent": "^1.0.1",
     "jsonwebtoken": "^8.5.1",
     "node-jose": "^1.1.3",
     "seedrandom": "^3.0.3",
