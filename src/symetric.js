@@ -6,7 +6,7 @@ async function decrypt (text, password) {
     k: password
   })
 
-  const decrypted = await jose.JWE.createDecrypt(key).decrypt(text).catch(e => console.log(e) || {
+  const decrypted = await jose.JWE.createDecrypt(key).decrypt(text).catch(e => console.warn(e) || {
     error: e
   })
 

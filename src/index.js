@@ -8,6 +8,24 @@ const fetchHelper = require('@hacknlove/fetchhelper')
 const store = require('@hacknlove/reduxplus')
 require('@hacknlove/substore')
 
+function hash (request) { // tested
+  const {
+    method = 'GET',
+    url = '/',
+    body = {}
+  } = request
+
+  const parsedUrl = new URL(url, location)
+
+  return shajs('sha256').update(JSON.stringify({
+    body,
+    hostname: parsedUrl.hostname,
+    method,
+    originalUrl: parsedUrl.pathname + parsedUrl.search,
+    protocol: parsedUrl.protocol.replace(/:$/, '')
+  })).digest('base64')
+}
+
 const creation = {
   RS256: ['RSA', 256],
   RS384: ['RSA', 384],
@@ -31,7 +49,7 @@ async function keyPOST (self, data, server) {
       'Content-Type': 'application/json'
     }
   })
-  if (self.uuid && !self.uuid.error) {
+  if (uuid && !uuid.error) {
     self.uuid = uuid
   }
   return [uuid, error]
@@ -51,26 +69,18 @@ async function keyPUT (self, data, server) {
 }
 
 class SafeApi {
-  constructor (options = {}) {
-    var pem = options.pem
-    var password = options.password
+  constructor () {
+    var pem = ''
+    var password = ''
 
-    this.uuid = options.uuid || ''
-    this.algorithm = options.algorithm || 'ES384'
-    this.expiresIn = options.expiresIn || 120
-    this.server = options.server || ''
+    this.uuid = ''
+    this.algorithm = 'ES384'
+    this.expiresIn = 120
+    this.server = ''
     this.storeAddress = `safeapi-client/${this.server}/${this.uuid}`
-    this.store = store.subStore(this.storeAddress)
-    if (pem) {
-      this.wait = new Promise((resolve) => {
-        jose.JWK.asKey(pem, 'pem').then(key => {
-          this.public = key.toPEM(false)
-          resolve()
-        })
-      })
-    }
+    this.store = store.subStore('')
 
-    this.fromText = async (text) => {
+    this.fromText = async (text) => { // tested
       const credentials = await decrypt(text, password)
       pem = credentials.pem
 
@@ -79,7 +89,7 @@ class SafeApi {
       this.algorithm = credentials.algorithm
     }
 
-    this.sign = async (options = {}) => {
+    this.sign = async (options = {}) => { // tested
       const {
         method = 'GET',
         body = {},
@@ -100,7 +110,7 @@ class SafeApi {
       })
     }
 
-    this.toText = async () => {
+    this.toText = async () => { // tested
       return encrypt({
         uuid: this.uuid,
         pem,
@@ -108,28 +118,29 @@ class SafeApi {
       }, password)
     }
 
-    this.newKey = async () => {
+    this.newKey = async () => { // tested
       const key = await jose.JWK.createKey(...creation[this.algorithm])
       pem = key.toPEM(true)
       this.public = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
     }
 
-    this.memorizePassword = () => {
-      localStorage.safeApiPassword = password
+    this.getHashedPassword = () => { // tested
+      return password
     }
 
-    this.setPassword = (password) => {
-      password = passtokey(password || '')
+    this.setPlainPassword = (pass) => { // tested
+      password = passtokey(pass || '')
+      return password
     }
 
-    this.rememberPassword = () => {
-      password = localStorage.password
+    this.setHashedPassword = (pass) => { // tested
+      password = pass
     }
   }
 
-  async fetch (url, options = {}) {
+  async fetch (url, options = {}) { // tested
     var {
-      method,
+      method = 'GET',
       body,
       headers
     } = options
@@ -141,7 +152,7 @@ class SafeApi {
     })
 
     return fetchHelper([
-      url, {
+      `${this.server}${url}`, {
         method,
         headers: {
           Authorization,
@@ -154,11 +165,11 @@ class SafeApi {
     ])
   }
 
-  async fromFile () {
+  async fromFile () { // tested
     const text = await new Promise((resolve, reject) => {
       const clean = setTimeout(() => {
         reject(new Error('TimedOut'))
-      }, 30000)
+      }, 1000)
 
       const input = document.createElement('input')
       input.type = 'file'
@@ -168,7 +179,7 @@ class SafeApi {
         var file = e.target.files[0]
         var reader = new FileReader()
         reader.readAsText(file, 'UTF-8')
-        reader.onload = async readerEvent => {
+        reader.onload = readerEvent => {
           clearTimeout(clean)
           resolve(readerEvent.target.result)
         }
@@ -177,29 +188,7 @@ class SafeApi {
     await this.fromText(text)
   }
 
-  async fromLocalStorage () {
-    await this.fromText(localStorage.safeApi)
-  }
-
-  hash (request) {
-    const {
-      method = 'GET',
-      url = '/',
-      body = {}
-    } = request
-
-    const parsedUrl = new URL(url, location)
-
-    return shajs('sha256').update(JSON.stringify({
-      body,
-      hostname: parsedUrl.hostname,
-      method,
-      originalUrl: parsedUrl.pathname + parsedUrl.search,
-      protocol: parsedUrl.protocol.replace(/:$/, '')
-    })).digest('base64')
-  }
-
-  async toFile () {
+  async toFile () { // tested
     const signedCredentials = await this.toText()
 
     var blob = new Blob([signedCredentials], { type: 'text/plain;charset=utf-8' })
@@ -207,19 +196,13 @@ class SafeApi {
     saveAs(blob, `${this.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
   }
 
-  async toLocalStorage () {
-    localStorage.safeApi = await this.toText()
-  }
-
-  async uploadPublicKey (data, server) {
-    this.server = this.server || server
+  async uploadPublicKey (data) {
     const [uuid, error] = this.uuid
-      ? await keyPUT(this, data, server || this.server)
-      : await keyPOST(this, data, server || this.server)
+      ? await keyPUT(this, data, this.server)
+      : await keyPOST(this, data, this.server)
     return [uuid, error]
   }
 }
 
 module.exports = new SafeApi()
-
-module.exports.SafeApi = SafeApi
+module.exports.hash = hash
