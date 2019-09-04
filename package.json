@@ -1,6 +1,6 @@
 {
   "name": "safeapi-client",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@hacknlove/fetchhelper": "^1.4.1",
-    "@hacknlove/substore": "git+https://github.com/hacknlove/substore.git",
     "file-saver": "^2.0.2",
     "isdifferent": "^1.0.1",
     "jsonwebtoken": "^8.5.1",
