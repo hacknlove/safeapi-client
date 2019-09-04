@@ -6,7 +6,6 @@ const saveAs = require('file-saver')
 const { decrypt, encrypt } = require('./symetric')
 const { passtokey } = require('./passtokey')
 const fetchHelper = require('@hacknlove/fetchhelper')
-require('@hacknlove/substore')
 
 var pem = ''
 var password = ''
