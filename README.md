@@ -127,6 +127,14 @@ You can set `options` the same way you do with browser's `fetch`, but in `option
 
 Returns a promise that resolves to `[response, error]`, where `response` is the payload, JSONparsed or null if some error has happend, in which case, `error` contains the error.
 
+### onUuidChange(callback)
+Adds a callback that will be called, with the UUID as parameter, each time the uuid changes.
+
+Returns a function to remove the callback.
+
+### useUUID()
+React hook that returns the UUID and refresh the component each time the UUID changes
+
 ### sign(request)
 
 Return a prmise that will resolved to the signed jwt for the request.
@@ -135,3 +143,8 @@ Return a prmise that will resolved to the signed jwt for the request.
 * `url`: the url of the request. `safeApi.conf.server` is not prefixed here. You should do it if needed.
 * `body`: the body of the request. Place here no JSON, but a javascript object.
 * `expiresIn`: Overrides `safeApi.conf.expiresIn`
+
+### removeKey()
+Set `safeApi.publicKey.uuid` to `''`
+
+Calls the `onUuidChange`'s callbaks and the `useUUID`'s hooks

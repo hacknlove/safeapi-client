@@ -1,3 +1,4 @@
+const { useState, useEffect } = require('react')
 const jwt = require('jsonwebtoken')
 const shajs = require('sha.js')
 const jose = require('node-jose')
@@ -31,6 +32,10 @@ const creation = {
   ES512: ['EC', 'P-512']
 }
 
+const callbacks = {}
+function callCallbacks () {
+  Object.values(callbacks).forEach(cb => cb(publicKey.uuid))
+}
 async function keyPOST (data) {
   var [uuid, error] = await fetchHelper(`${conf.server}key`, {
     method: 'POST',
@@ -44,8 +49,17 @@ async function keyPOST (data) {
   })
   if (uuid && !uuid.error) {
     publicKey.uuid = uuid
+    callCallbacks()
   }
   return [uuid, error]
+}
+
+function useUUID () {
+  const [value, set] = useState(publicKey.uuid)
+  useEffect(() => onUuidChange(uuid => {
+    set(uuid)
+  }))
+  return value
 }
 
 async function keyPUT (data) {
@@ -66,8 +80,10 @@ async function fromText (text) {
   pem = credentials.pem
 
   publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
+  var oldUUID = publicKey.uuid
   publicKey.uuid = credentials.uuid
   algorithm = credentials.algorithm
+  oldUUID !== publicKey.uuid && callCallbacks()
 }
 
 async function fetch (url, options = {}) { // tested
@@ -184,11 +200,26 @@ function setHashedPassword (pass) {
   password = pass
 }
 
+function onUuidChange (callback) {
+  var sk
+  do {
+    sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
+  } while (callbacks[sk])
+
+  callbacks[sk] = callback
+  return () => {
+    delete callbacks[sk]
+  }
+}
+function removeKey () {
+  publicKey.uuid = ''
+  callCallbacks()
+}
 function hash (request) { // tested
   const {
-    method = 'GET',
-    url = '/',
-    body = {}
+    method,
+    url,
+    body
   } = request
 
   const parsedUrl = new URL(url, location)
@@ -215,4 +246,7 @@ module.exports.setPlainPassword = setPlainPassword
 module.exports.getHashedPassword = getHashedPassword
 module.exports.setHashedPassword = setHashedPassword
 module.exports.publicKey = publicKey
+module.exports.onUuidChange = onUuidChange
+module.exports.useUUID = useUUID
+module.exports.removeKey = removeKey
 module.exports.conf = conf

@@ -198,3 +198,65 @@ describe('safeApi', () => {
     assert(error === undefined)
   })
 })
+describe('onUuidChange', () => {
+  var i = 'uno'
+
+  var unCallback3
+  var uuidEsperado = ''
+  it('establece callbacks y llama a todos, cambio probado con removeKey', async () => {
+    expect.assertions(3)
+
+    safeApi.onUuidChange(uuid => {
+      assert(uuid === uuidEsperado)
+      assert(i === 'uno')
+      expect(true).toBe(true)
+      i = 'dos'
+    })
+    safeApi.onUuidChange(uuid => {
+      assert(uuid === uuidEsperado)
+      assert(i === 'dos')
+      expect(true).toBe(true)
+      i = 'tres'
+    })
+    unCallback3 = safeApi.onUuidChange(uuid => {
+      assert(uuid === uuidEsperado)
+      assert(i === 'tres')
+      expect(true).toBe(true)
+      i = 'uno'
+    })
+    safeApi.removeKey()
+
+    assert(i === 'uno')
+  })
+  it('elimina un callback, probado con removeKey', async () => {
+    unCallback3()
+
+    fetchHelper.fetch = jest.fn((url, options) => {
+      return Promise.resolve({
+        ok: true,
+        json () {
+          return 'nuevoUUID'
+        }
+      })
+    })
+
+    expect.assertions(2)
+    uuidEsperado = 'nuevoUUID'
+    await safeApi.uploadPublicKey()
+    assert(i === 'tres')
+    i = 'uno'
+  })
+
+  it('fromText no lanza los callbacks si el uuid no ha cambiado', async () => {
+    expect.assertions(0)
+    const exported = await safeApi.toText()
+    await safeApi.fromText(exported)
+  })
+
+  it('fromText lanza los callbacks si el uuid no ha cambiado', async () => {
+    expect.assertions(2)
+    const exported = await safeApi.toText()
+    safeApi.publicKey.uuid = 'otro'
+    await safeApi.fromText(exported)
+  })
+})
