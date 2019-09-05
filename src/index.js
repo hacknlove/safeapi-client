@@ -117,7 +117,7 @@ async function fromFile () {
   const text = await new Promise((resolve, reject) => {
     const clean = setTimeout(() => {
       reject(new Error('TimedOut'))
-    }, 1000)
+    }, 60000)
 
     const input = document.createElement('input')
     input.type = 'file'
