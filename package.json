@@ -1,6 +1,6 @@
 {
   "name": "safeapi-client",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
@@ -44,7 +44,6 @@
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
-    "@hacknlove/reduxplus": "^1.5.3",
     "@testing-library/react-hooks": "^2.0.1",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^24.9.0",

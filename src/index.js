@@ -35,12 +35,21 @@ const callbacks = {}
 function callCallbacks () {
   Object.values(callbacks).forEach(cb => cb(publicKey.uuid))
 }
+
+function useUUID () {
+  const [value, set] = useState(publicKey.uuid)
+  useEffect(() => onUuidChange(uuid => {
+    set(uuid)
+  }))
+  return value
+}
+
 async function keyPOST (data) {
   var [uuid, error] = await fetchHelper(`${conf.server}key`, {
     method: 'POST',
     json: {
       ...data,
-      publicKey: publicKey
+      pem: pem
     },
     headers: {
       'Content-Type': 'application/json'
@@ -51,14 +60,6 @@ async function keyPOST (data) {
     callCallbacks()
   }
   return [uuid, error]
-}
-
-function useUUID () {
-  const [value, set] = useState(publicKey.uuid)
-  useEffect(() => onUuidChange(uuid => {
-    set(uuid)
-  }))
-  return value
 }
 
 async function keyPUT (data) {
