@@ -49,7 +49,7 @@ async function keyPOST (data) {
     method: 'POST',
     json: {
       ...data,
-      pem: pem
+      pem: publicKey.pem
     },
     headers: {
       'Content-Type': 'application/json'

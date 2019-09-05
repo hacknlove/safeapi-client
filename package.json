@@ -1,6 +1,6 @@
 {
   "name": "safeapi-client",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
