@@ -1,6 +1,6 @@
 {
   "name": "safeapi-client",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
@@ -29,7 +29,6 @@
   },
   "homepage": "https://github.com/hacknlove/safeapi-client#readme",
   "peerDependencies": {
-    "@hacknlove/reduxplus": "^1.5.3",
     "react": "^16.9.0"
   },
   "dependencies": {

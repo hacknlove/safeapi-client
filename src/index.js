@@ -105,7 +105,7 @@ async function fetch (url, options = {}) { // tested
         'Content-Type': 'application/json',
         ...headers
       },
-      body: options.body === undefined ? '' : JSON.stringify(options.body)
+      body: options.body === undefined ? undefined : JSON.stringify(options.body)
     }
   ])
 }
