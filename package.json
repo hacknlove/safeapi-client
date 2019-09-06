@@ -1,13 +1,14 @@
 {
   "name": "safeapi-client",
-  "version": "2.2.5",
+  "version": "2.3.0",
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
     "/src"
   ],
   "scripts": {
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "coverage": "jest --coverage"
   },
   "publishConfig": {
     "access": "public"

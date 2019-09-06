@@ -65,10 +65,7 @@ async function keyPOST (data) {
 async function keyPUT (data) {
   return fetchHelper(`${conf.server}key/${publicKey.uuid}`, {
     method: 'PUT',
-    json: {
-      ...data,
-      pem: publicKey.pem
-    },
+    json: data,
     headers: {
       'Content-Type': 'application/json'
     }
@@ -144,18 +141,11 @@ async function toFile () {
   saveAs(blob, `${publicKey.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
 }
 
-async function uploadPublicKey (data) {
-  const [uuid, error] = publicKey.uuid
-    ? await keyPUT(data)
-    : await keyPOST(data)
-  return [uuid, error]
-}
-
-async function sign (options = {}) { // tested
+async function sign (options) { // tested
   const {
-    method = 'GET',
+    method,
     body = {},
-    url = '/'
+    url
   } = options
 
   return jwt.sign({
@@ -186,6 +176,33 @@ async function newKey (alg) {
   publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
   return publicKey.pem
 }
+async function createKey (data, alg) {
+  await newKey(alg)
+  return keyPOST(data)
+}
+
+async function renewKey (data = {}, alg) {
+  const oldArgorithm = algorithm
+  const oldPem = pem
+  const oldPublicKeyPem = publicKey.pem
+  const newAlgorithm = alg || oldArgorithm
+  const newPublicPem = await newKey(newAlgorithm)
+  const newPem = pem
+
+  pem = oldPem
+  algorithm = oldArgorithm
+  publicKey.pem = oldPublicKeyPem
+
+  data.pem = newPublicPem
+  const [res, err] = await keyPUT(data)
+
+  if (!err) {
+    pem = newPem
+    alg = newAlgorithm
+    publicKey.pem = newPublicPem
+  }
+  return [res, err]
+}
 
 function getHashedPassword () {
   return password
@@ -211,7 +228,7 @@ function onUuidChange (callback) {
     delete callbacks[sk]
   }
 }
-function removeKey () {
+function logout () {
   publicKey.uuid = ''
   callCallbacks()
 }
@@ -234,19 +251,18 @@ function hash (request) { // tested
 }
 setPlainPassword()
 
+module.exports.createKey = createKey
 module.exports.fromText = fromText
 module.exports.fetch = fetch
 module.exports.fromFile = fromFile
 module.exports.toFile = toFile
-module.exports.uploadPublicKey = uploadPublicKey
-module.exports.sign = sign
 module.exports.toText = toText
-module.exports.newKey = newKey
 module.exports.setPlainPassword = setPlainPassword
 module.exports.getHashedPassword = getHashedPassword
 module.exports.setHashedPassword = setHashedPassword
 module.exports.publicKey = publicKey
 module.exports.onUuidChange = onUuidChange
 module.exports.useUUID = useUUID
-module.exports.removeKey = removeKey
+module.exports.logout = logout
+module.exports.renewKey = renewKey
 module.exports.conf = conf

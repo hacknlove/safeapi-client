@@ -10,8 +10,9 @@ npm i safeapi-client
 import safeApi from 'safeapi-client'
 safeApi.server = 'https://example.com/'
 async function example1 () {
-  await safeApi.newKey()
-  await safeApi.uploadPublicKey() // New keys must be uploaded before be used
+  safeApi.conf.server = 'https://example.com/api'
+  await safeApi.createKey()
+  safeApi.setPlainPassword('password')
   localStorage.keys = safeApi.toText()
   // ...
 
@@ -24,6 +25,7 @@ import safeApi from 'safeapi-client'
 
 async function example1 () {
   safeApi.server = 'https://example.com/'
+  safeApi.setPlainPassword('password')
   safeApi.fromText(localStorage.keys)
 
   const [ response, error ] = safeApi.fetch('endpoint', options) // https://example.com/endpoint
@@ -31,14 +33,6 @@ async function example1 () {
 ```
 
 ## API
-### `uploadPublicKey(data, server?)`
-Sends the public key to the safeApi-server indicated by the parameter `server` or by `this.server`
-
-if exists `this.uuid` it performs a `PUT` to update the public key asigned to that `uuid`.
-if not, it performs a `POST`, and assings the returned `uuid` to `this.uuid`
-
-In `data` you can set more parameters to be sent in the json
-
 
 ### safeApi.conf.server
 The prefix to the fetchs.
@@ -53,12 +47,12 @@ The public PEM. Or '' if not key has been created or set.
 ### safeApi.publicKey.uuid
 The UUID that uses the server to identify the public key
 
-### newKey(algorithm)
-Set the algorithm that will be used to sign the requests, and creates a new pair of keys.
+### createKey([data, [algorithm]])
+Creates a new pair of keys and upload the public one to the server that should include `safeapi-server`.
 
-Returns a promise that will be resolved with the public PEM
+You can put in `data` any data you need, but you must let `data.pem` free, because it is used to upload the public key.
 
-After the promise is resolved, the public PEM can be find at `safeApi.publicKey.pem`
+Returns a promise that will be resolved to `[uuid, error]`
 
 `algorithm` can be one of:
 
@@ -72,18 +66,25 @@ After the promise is resolved, the public PEM can be find at `safeApi.publicKey.
 * `'ES384'`
 * `'ES512'`
 
-The credentials are not completed and `safeApi.sign` neither `safeApi.fetch+` should not be called until they get an `uuid`
+### renewKey([data, [algorithm]])
+Creates a new pair of keys and upload the public one to the server, to update the key assigned to the current `uuid`
 
-### uploadPublicKey([data])
-Uploads the public key to the server indicated in `safeApi.conf.server` which uses `safeapi-server`
+You can put in `data` any data you need, but you must let `data.pem` free, because it is used to upload the public key.
 
-You can use data to set more members to the body that will be sent.
+Returns a promise that will be resolved to `[uuid, error]`
 
-Returns a promise that will resolve to `[uuid, error]`
+`algorithm` can be one of:
 
-If no error has ocurred, `uuid` will be the `uuid` that you can find also at `safeApi.publicKey.uuid`, and `error` will be `undefined`
+* `'RS256'`
+* `'RS384'`
+* `'RS512'`
+* `'PS256'`
+* `'PS384'`
+* `'PS512'`
+* `'ES256'`
+* `'ES384'`
+* `'ES512'`
 
-Is some error has ocurred, `uuid` will be null, and `error` will be an object with the error.
 
 ### setPlainPassword(password)
 Hash the plain-password, and det the hashed-password that will be used to export and import the credentials.
@@ -135,16 +136,5 @@ Returns a function to remove the callback.
 ### useUUID()
 React hook that returns the UUID and refresh the component each time the UUID changes
 
-### sign(request)
-
-Return a prmise that will resolved to the signed jwt for the request.
-
-* `method`: `'DELETE'`, `'GET'`, `'POST'`, `'PUT'`...
-* `url`: the url of the request. `safeApi.conf.server` is not prefixed here. You should do it if needed.
-* `body`: the body of the request. Place here no JSON, but a javascript object.
-* `expiresIn`: Overrides `safeApi.conf.expiresIn`
-
-### removeKey()
-Set `safeApi.publicKey.uuid` to `''`
-
-Calls the `onUuidChange`'s callbaks and the `useUUID`'s hooks
+### logout()
+Remove locally the credentials, calls the `onUuidChange`'s callbaks and the `useUUID`'s hooks

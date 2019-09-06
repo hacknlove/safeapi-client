@@ -1,4 +1,4 @@
-const { renderHook, act } = require('@testing-library/react-hooks')
+const { renderHook } = require('@testing-library/react-hooks')
 const safeApi = require('../')
 const fetchHelper = require('@hacknlove/fetchhelper')
 
@@ -22,10 +22,10 @@ describe('useUUID', () => {
     clean = unmount
 
     assert(result.current === '')
-    safeApi.uploadPublicKey()
+    safeApi.createKey()
     await waitForNextUpdate()
     assert(result.current === 'nuevoUUID')
-    setTimeout(() => safeApi.removeKey())
+    setTimeout(() => safeApi.logout())
     await waitForNextUpdate()
     assert(result.current === '')
   })
