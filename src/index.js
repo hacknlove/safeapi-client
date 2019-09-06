@@ -62,16 +62,6 @@ async function keyPOST (data) {
   return [uuid, error]
 }
 
-async function keyPUT (data) {
-  return fetchHelper(`${conf.server}key/${publicKey.uuid}`, {
-    method: 'PUT',
-    json: data,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-}
-
 async function fromText (text) {
   const credentials = await decrypt(text, password)
   pem = credentials.pem
@@ -194,7 +184,10 @@ async function renewKey (data = {}, alg) {
   publicKey.pem = oldPublicKeyPem
 
   data.pem = newPublicPem
-  const [res, err] = await keyPUT(data)
+  const [res, err] = await fetch(`key/${publicKey.uuid}`, {
+    method: 'PUT',
+    body: data
+  })
 
   if (!err) {
     pem = newPem
