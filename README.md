@@ -41,6 +41,10 @@ The prefix to the fetchs.
 ### safeApi.conf.expiresIn
 The expiration time, in seconds, of the signatures. defaults to 120 seconds.
 
+### safeApi.conf.checkInterval
+The interval in seconds to check, against the server, that the key is still valid. defaults to 300 seconds.
+Each time, a fetch is done, the interval resets.
+
 ### safeApi.publicKey.pem
 The public PEM. Or '' if not key has been created or set.
 
@@ -129,7 +133,7 @@ You can set `options` the same way you do with browser's `fetch`, but in `option
 Returns a promise that resolves to `[response, error]`, where `response` is the payload, JSONparsed or null if some error has happend, in which case, `error` contains the error.
 
 ### onUuidChange(callback)
-Adds a callback that will be called, with the UUID as parameter, each time the uuid changes.
+Adds a callback that will be called, with the UUID as first parameter, and a optional second parameter that could contain the reason of the UUID change, each time the uuid changes.
 
 Returns a function to remove the callback.
 

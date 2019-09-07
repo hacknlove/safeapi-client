@@ -18,6 +18,7 @@ const callbacks = {}
 
 var conf = {
   expiresIn: 120,
+  checkInterval: 300,
   server: ''
 }
 
@@ -37,8 +38,10 @@ var password = ''
 
 var pem = ''
 
-function callCallbacks () {
-  Object.values(callbacks).forEach(cb => cb(publicKey.uuid))
+var nextTestCredencials
+
+function callCallbacks (reason) {
+  Object.values(callbacks).forEach(cb => cb(publicKey.uuid, reason))
 }
 
 async function createKey (data, alg) {
@@ -59,7 +62,7 @@ async function fetch (url, options = {}) {
     body
   })
 
-  return fetchHelper([
+  const [res, error] = await fetchHelper([
     `${conf.server}${url}`, {
       method,
       headers: {
@@ -71,6 +74,12 @@ async function fetch (url, options = {}) {
       body: options.body === undefined ? undefined : JSON.stringify(options.body)
     }
   ])
+  if (res && res.authError) {
+    logout()
+  } else {
+    scheduleTestCredentials()
+  }
+  return [res, error]
 }
 
 async function fromFile () {
@@ -99,12 +108,15 @@ async function fromFile () {
 async function fromText (text) {
   const credentials = await decrypt(text, password)
   pem = credentials.pem
-
-  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
+  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false)).catch(e => {
+    console.error(pem, text, password)
+    throw e
+  })
   var oldUUID = publicKey.uuid
   publicKey.uuid = credentials.uuid
   algorithm = credentials.algorithm
   oldUUID !== publicKey.uuid && callCallbacks()
+  return testCredentials()
 }
 
 function getHashedPassword () {
@@ -143,13 +155,17 @@ async function keyPOST (data) {
   if (uuid && !uuid.error) {
     publicKey.uuid = uuid
     callCallbacks()
+    scheduleTestCredentials()
   }
   return [uuid, error]
 }
 
-function logout () {
+function logout (reason) {
   publicKey.uuid = ''
-  callCallbacks()
+  publicKey.pem = ''
+  pem = ''
+  clearTimeout(nextTestCredencials)
+  callCallbacks(reason)
 }
 
 async function newKey (alg) {
@@ -172,6 +188,38 @@ function onUuidChange (callback) {
   }
 }
 
+async function renewKey (data = {}, alg) {
+  const newAlgorithm = alg || algorithm
+  const newkey = await jose.JWK.createKey(...creation[newAlgorithm])
+  const newPublicKey = newkey.toPEM(false)
+
+  const [res, err] = await fetch(`key/${publicKey.uuid}`, {
+    method: 'PUT',
+    body: {
+      ...data,
+      pem: newPublicKey
+    }
+  })
+
+  if (res && res.ok === true) {
+    pem = newkey.toPEM(true)
+    publicKey.pem = newkey.toPEM(false)
+    algorithm = newAlgorithm
+    scheduleTestCredentials()
+  }
+
+  return [res, err]
+}
+
+function setPlainPassword (pass) {
+  password = passtokey(pass || '')
+  return password
+}
+
+function setHashedPassword (pass) {
+  password = pass
+}
+
 async function sign (options) {
   const {
     method,
@@ -190,6 +238,19 @@ async function sign (options) {
     algorithm,
     expiresIn: options.expiresIn || conf.expiresIn
   })
+}
+
+async function testCredentials () {
+  const [res] = await fetch('key')
+  if (res && res.error) {
+    logout('Bad credentials')
+  }
+}
+
+function scheduleTestCredentials () {
+  clearTimeout(nextTestCredencials)
+  nextTestCredencials = setTimeout(testCredentials, conf.checkInterval * 1000)
+  return true
 }
 
 async function toFile () {
@@ -216,37 +277,6 @@ function useUUID () {
   return value
 }
 
-async function renewKey (data = {}, alg) {
-  const newAlgorithm = alg || algorithm
-  const newkey = await jose.JWK.createKey(...creation[newAlgorithm])
-  const newPublicKey = newkey.toPEM(false)
-
-  const [res, err] = await fetch(`key/${publicKey.uuid}`, {
-    method: 'PUT',
-    body: {
-      ...data,
-      pem: newPublicKey
-    }
-  })
-
-  if (res && res.ok === true) {
-    pem = newkey.toPEM(true)
-    publicKey.pem = newkey.toPEM(false)
-    algorithm = newAlgorithm
-  }
-
-  return [res, err]
-}
-
-function setPlainPassword (pass) {
-  password = passtokey(pass || '')
-  return password
-}
-
-function setHashedPassword (pass) {
-  password = pass
-}
-
 setPlainPassword()
 
 module.exports.createKey = createKey
@@ -264,3 +294,5 @@ module.exports.useUUID = useUUID
 module.exports.logout = logout
 module.exports.renewKey = renewKey
 module.exports.conf = conf
+module.exports.testCredentials = testCredentials
+module.exports.scheduleTestCredentials = scheduleTestCredentials

@@ -78,32 +78,6 @@ describe('safeApi', () => {
   it('toText exporta las credenciales en texto', async () => {
     assert(await safeApi.toText())
   })
-  describe('fromText', () => {
-    it('fromText importa las credenciales en texto', async () => {
-      safeApi.publicKey.uuid = 'o98l9kjh'
-      const pem = safeApi.publicKey.pem
-      const credenciales = await safeApi.toText()
-      await safeApi.createKey()
-
-      assert(safeApi.publicKey.uuid !== 'o98l9kjh')
-      assert(safeApi.publicKey.pem !== pem)
-
-      await safeApi.fromText(credenciales)
-
-      assert(safeApi.publicKey.uuid, 'o98l9kjh')
-      assert(safeApi.publicKey.pem === pem)
-    })
-    it('fromText lanza error al importar si el password no es correcto', async () => {
-      expect.assertions(1)
-      safeApi.setPlainPassword('pass')
-      const credenciales = await safeApi.toText()
-      jest.spyOn(console, 'warn').mockImplementation(() => {
-        expect(true).toBe(true)
-      })
-      safeApi.setPlainPassword('puss')
-      await assert.rejects(safeApi.fromText(credenciales))
-    })
-  })
   describe('fetch', () => {
     it('envia peticiones firmadas', async () => {
       safeApi.conf.server = 'https://servidor/'
@@ -172,7 +146,7 @@ describe('safeApi', () => {
     jest.spyOn(document, 'createElement').mockReturnValue(input)
 
     const promise = safeApi.fromFile()
-    jest.runAllTimers()
+    jest.runOnlyPendingTimers()
     assert.rejects(promise, new Error('TimedOut'))
   })
   it('toFile guarda en un archivo', async () => {
