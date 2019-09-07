@@ -75,7 +75,7 @@ async function fetch (url, options = {}) {
     }
   ])
   if (res && res.authError) {
-    logout()
+    logout('Bad credentials')
   } else {
     scheduleTestCredentials()
   }
@@ -102,14 +102,14 @@ async function fromFile () {
       }
     }
   })
-  await fromText(text)
+  return fromText(text)
 }
 
 async function fromText (text) {
   const credentials = await decrypt(text, password)
   pem = credentials.pem
   publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false)).catch(e => {
-    console.error({ pem, text, password })
+    console.log(JSON.stringify({ credentials, text, password }))
     throw e
   })
   var oldUUID = publicKey.uuid
@@ -123,7 +123,7 @@ function getHashedPassword () {
   return password
 }
 
-function hash (request) { // tested
+function hash (request) {
   const {
     method,
     url,
@@ -131,7 +131,6 @@ function hash (request) { // tested
   } = request
 
   const parsedUrl = new URL(url, location)
-
   return shajs('sha256').update(JSON.stringify({
     body,
     hostname: parsedUrl.hostname,
@@ -241,10 +240,12 @@ async function sign (options) {
 }
 
 async function testCredentials () {
-  const [res] = await fetch('key')
+  const [res] = await fetch('key/')
   if (res && res.error) {
     logout('Bad credentials')
+    return false
   }
+  return true
 }
 
 function scheduleTestCredentials () {
