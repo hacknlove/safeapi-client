@@ -109,7 +109,7 @@ async function fromText (text) {
   const credentials = await decrypt(text, password)
   pem = credentials.pem
   publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false)).catch(e => {
-    console.error(pem, text, password)
+    console.error({ pem, text, password })
     throw e
   })
   var oldUUID = publicKey.uuid
