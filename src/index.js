@@ -7,16 +7,18 @@ const { decrypt, encrypt } = require('./symetric')
 const { passtokey } = require('./passtokey')
 const fetchHelper = require('@hacknlove/fetchhelper')
 
-var pem = ''
-var password = ''
 var algorithm = 'ES384'
-var conf = {
-  expiresIn: 120,
-  server: ''
-}
+
 var publicKey = {
   pem: '',
   uuid: ''
+}
+
+const callbacks = {}
+
+var conf = {
+  expiresIn: 120,
+  server: ''
 }
 
 const creation = {
@@ -31,49 +33,20 @@ const creation = {
   ES512: ['EC', 'P-512']
 }
 
-const callbacks = {}
+var password = ''
+
+var pem = ''
+
 function callCallbacks () {
   Object.values(callbacks).forEach(cb => cb(publicKey.uuid))
 }
 
-function useUUID () {
-  const [value, set] = useState(publicKey.uuid)
-  useEffect(() => onUuidChange(uuid => {
-    set(uuid)
-  }))
-  return value
+async function createKey (data, alg) {
+  await newKey(alg)
+  return keyPOST(data)
 }
 
-async function keyPOST (data) {
-  var [uuid, error] = await fetchHelper(`${conf.server}key`, {
-    method: 'POST',
-    json: {
-      ...data,
-      pem: publicKey.pem
-    },
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-  if (uuid && !uuid.error) {
-    publicKey.uuid = uuid
-    callCallbacks()
-  }
-  return [uuid, error]
-}
-
-async function fromText (text) {
-  const credentials = await decrypt(text, password)
-  pem = credentials.pem
-
-  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
-  var oldUUID = publicKey.uuid
-  publicKey.uuid = credentials.uuid
-  algorithm = credentials.algorithm
-  oldUUID !== publicKey.uuid && callCallbacks()
-}
-
-async function fetch (url, options = {}) { // tested
+async function fetch (url, options = {}) {
   var {
     method = 'GET',
     body,
@@ -123,15 +96,83 @@ async function fromFile () {
   await fromText(text)
 }
 
-async function toFile () {
-  const signedCredentials = await toText()
+async function fromText (text) {
+  const credentials = await decrypt(text, password)
+  pem = credentials.pem
 
-  var blob = new Blob([signedCredentials], { type: 'text/plain;charset=utf-8' })
-
-  saveAs(blob, `${publicKey.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
+  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
+  var oldUUID = publicKey.uuid
+  publicKey.uuid = credentials.uuid
+  algorithm = credentials.algorithm
+  oldUUID !== publicKey.uuid && callCallbacks()
 }
 
-async function sign (options) { // tested
+function getHashedPassword () {
+  return password
+}
+
+function hash (request) { // tested
+  const {
+    method,
+    url,
+    body
+  } = request
+
+  const parsedUrl = new URL(url, location)
+
+  return shajs('sha256').update(JSON.stringify({
+    body,
+    hostname: parsedUrl.hostname,
+    method,
+    originalUrl: parsedUrl.pathname + parsedUrl.search,
+    protocol: parsedUrl.protocol.replace(/:$/, '')
+  })).digest('base64')
+}
+
+async function keyPOST (data) {
+  var [uuid, error] = await fetchHelper(`${conf.server}key`, {
+    method: 'POST',
+    json: {
+      ...data,
+      pem: publicKey.pem
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  if (uuid && !uuid.error) {
+    publicKey.uuid = uuid
+    callCallbacks()
+  }
+  return [uuid, error]
+}
+
+function logout () {
+  publicKey.uuid = ''
+  callCallbacks()
+}
+
+async function newKey (alg) {
+  algorithm = alg || algorithm
+  const key = await jose.JWK.createKey(...creation[algorithm])
+  pem = key.toPEM(true)
+  publicKey.pem = key.toPEM(false)
+  return publicKey.pem
+}
+
+function onUuidChange (callback) {
+  var sk
+  do {
+    sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
+  } while (callbacks[sk])
+
+  callbacks[sk] = callback
+  return () => {
+    delete callbacks[sk]
+  }
+}
+
+async function sign (options) {
   const {
     method,
     body = {},
@@ -151,6 +192,14 @@ async function sign (options) { // tested
   })
 }
 
+async function toFile () {
+  const signedCredentials = await toText()
+
+  var blob = new Blob([signedCredentials], { type: 'text/plain;charset=utf-8' })
+
+  saveAs(blob, `${publicKey.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
+}
+
 async function toText () {
   return encrypt({
     uuid: publicKey.uuid,
@@ -159,46 +208,34 @@ async function toText () {
   }, password)
 }
 
-async function newKey (alg) {
-  algorithm = alg || algorithm
-  const key = await jose.JWK.createKey(...creation[algorithm])
-  pem = key.toPEM(true)
-  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
-  return publicKey.pem
-}
-async function createKey (data, alg) {
-  await newKey(alg)
-  return keyPOST(data)
+function useUUID () {
+  const [value, set] = useState(publicKey.uuid)
+  useEffect(() => onUuidChange(uuid => {
+    set(uuid)
+  }))
+  return value
 }
 
 async function renewKey (data = {}, alg) {
-  const oldArgorithm = algorithm
-  const oldPem = pem
-  const oldPublicKeyPem = publicKey.pem
-  const newAlgorithm = alg || oldArgorithm
-  const newPublicPem = await newKey(newAlgorithm)
-  const newPem = pem
+  const newAlgorithm = alg || algorithm
+  const newkey = await jose.JWK.createKey(...creation[newAlgorithm])
+  const newPublicKey = newkey.toPEM(false)
 
-  pem = oldPem
-  algorithm = oldArgorithm
-  publicKey.pem = oldPublicKeyPem
-
-  data.pem = newPublicPem
   const [res, err] = await fetch(`key/${publicKey.uuid}`, {
     method: 'PUT',
-    body: data
+    body: {
+      ...data,
+      pem: newPublicKey
+    }
   })
 
   if (!err) {
-    pem = newPem
-    alg = newAlgorithm
-    publicKey.pem = newPublicPem
+    pem = newkey.toPEM(true)
+    publicKey.pem = newkey.toPEM(false)
+    algorithm = newAlgorithm
   }
-  return [res, err]
-}
 
-function getHashedPassword () {
-  return password
+  return [res, err]
 }
 
 function setPlainPassword (pass) {
@@ -210,38 +247,6 @@ function setHashedPassword (pass) {
   password = pass
 }
 
-function onUuidChange (callback) {
-  var sk
-  do {
-    sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
-  } while (callbacks[sk])
-
-  callbacks[sk] = callback
-  return () => {
-    delete callbacks[sk]
-  }
-}
-function logout () {
-  publicKey.uuid = ''
-  callCallbacks()
-}
-function hash (request) { // tested
-  const {
-    method,
-    url,
-    body
-  } = request
-
-  const parsedUrl = new URL(url, location)
-
-  return shajs('sha256').update(JSON.stringify({
-    body,
-    hostname: parsedUrl.hostname,
-    method,
-    originalUrl: parsedUrl.pathname + parsedUrl.search,
-    protocol: parsedUrl.protocol.replace(/:$/, '')
-  })).digest('base64')
-}
 setPlainPassword()
 
 module.exports.createKey = createKey
