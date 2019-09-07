@@ -229,7 +229,7 @@ async function renewKey (data = {}, alg) {
     }
   })
 
-  if (!err) {
+  if (res && res.ok === true) {
     pem = newkey.toPEM(true)
     publicKey.pem = newkey.toPEM(false)
     algorithm = newAlgorithm

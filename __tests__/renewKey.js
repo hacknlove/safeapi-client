@@ -25,7 +25,7 @@ describe('renewKey', () => {
       return Promise.resolve({
         ok: true,
         json () {
-          return 'nohacenadaconesto'
+          return { ok: true }
         }
       })
     })
@@ -33,11 +33,11 @@ describe('renewKey', () => {
     var oldPublicKey = safeApi.publicKey.pem
     const [response, error] = await safeApi.renewKey()
     assert(safeApi.publicKey.uuid === 'nuevoUUID')
-    assert(response === 'nohacenadaconesto')
+    assert.deepStrictEqual(response, { ok: true })
     assert(safeApi.publicKey.pem !== oldPublicKey)
     assert(error === undefined)
   })
-  it('si el PUT devuelve error no cambia las credenciales', async () => {
+  it('si el PUT devuelve error 4xx 5xx no cambia las credenciales', async () => {
     expect.assertions(1)
     fetchHelper.fetch = jest.fn((url, options) => {
       assert(options.method === 'PUT')
@@ -53,5 +53,30 @@ describe('renewKey', () => {
     assert(safeApi.publicKey.pem === oldPublicKey)
     assert(response === null)
     assert.deepStrictEqual(error, { ok: false })
+  })
+  it('si safeapi-client devuelve error, no cambia las credenciales', async () => {
+    expect.assertions(1)
+    fetchHelper.fetch.mockImplementation((url, options) => {
+      assert(options.method === 'PUT')
+      expect(true).toBe(true)
+      return Promise.resolve({
+        ok: true,
+        json () {
+          return {
+            error: 'test'
+          }
+        }
+      })
+    })
+
+    const oldUUID = safeApi.publicKey.uuid
+    var oldPem = safeApi.publicKey.pem
+
+    const [response, error] = await safeApi.renewKey()
+
+    assert(safeApi.publicKey.uuid === oldUUID)
+    assert(safeApi.publicKey.pem === oldPem)
+    assert.deepStrictEqual(response, { error: 'test' })
+    assert(error === undefined)
   })
 })
