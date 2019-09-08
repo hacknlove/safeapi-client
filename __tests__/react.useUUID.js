@@ -1,5 +1,6 @@
 const { renderHook } = require('@testing-library/react-hooks')
-const safeApi = require('../')
+const safeApi = require('../src')
+const safeApiReact = require('../src/react')
 const fetchHelper = require('@hacknlove/fetchhelper')
 
 describe('useUUID', () => {
@@ -18,7 +19,7 @@ describe('useUUID', () => {
       })
     })
 
-    const { result, unmount, waitForNextUpdate } = renderHook(() => safeApi.useUUID())
+    const { result, unmount, waitForNextUpdate } = renderHook(() => safeApiReact.useUUID())
     clean = unmount
 
     assert(result.current === '')

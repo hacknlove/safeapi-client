@@ -44,8 +44,32 @@ function callCallbacks (reason) {
 }
 
 async function createKey (data, alg) {
-  await newKey(alg)
-  return keyPOST(data)
+  const newAlgorithm = alg || algorithm
+
+  const key = await jose.JWK.createKey(...creation[newAlgorithm])
+  const newPublicKey = key.toPEM(false)
+
+  var [uuid, error] = await fetchHelper(`${conf.server}key`, {
+    method: 'POST',
+    json: {
+      ...data,
+      pem: newPublicKey
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+
+  if (uuid && !uuid.error) {
+    pem = key.toPEM(true)
+    publicKey.pem = newPublicKey
+    algorithm = newAlgorithm
+    publicKey.uuid = uuid
+    callCallbacks('login')
+    scheduleTestCredentials()
+  }
+
+  return [uuid, error]
 }
 
 async function fetch (url, options = {}) {
@@ -119,39 +143,12 @@ function hash (request) {
   })).digest('base64')
 }
 
-async function keyPOST (data) {
-  var [uuid, error] = await fetchHelper(`${conf.server}key`, {
-    method: 'POST',
-    json: {
-      ...data,
-      pem: publicKey.pem
-    },
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-  if (uuid && !uuid.error) {
-    publicKey.uuid = uuid
-    callCallbacks()
-    scheduleTestCredentials()
-  }
-  return [uuid, error]
-}
-
 function logout (reason) {
   publicKey.uuid = ''
   publicKey.pem = ''
   pem = ''
   clearTimeout(nextTestCredencials)
   callCallbacks(reason)
-}
-
-async function newKey (alg) {
-  algorithm = alg || algorithm
-  const key = await jose.JWK.createKey(...creation[algorithm])
-  pem = key.toPEM(true)
-  publicKey.pem = key.toPEM(false)
-  return publicKey.pem
 }
 
 function onUuidChange (callback) {
@@ -225,8 +222,11 @@ async function sign (options) {
 }
 
 async function testCredentials () {
-  const [res] = await fetch('key/')
-  if (res && res.error) {
+  const [res, error] = await fetch('key/')
+  if (res) {
+    return true
+  }
+  if (error.authError) {
     logout('Bad credentials')
     return false
   }
@@ -264,5 +264,11 @@ exports.logout = logout
 exports.onUuidChange = onUuidChange
 exports.publicKey = publicKey
 exports.renewKey = renewKey
+exports.setPlainPassword = setPlainPassword
 exports.setHashedPassword = setHashedPassword
 exports.toText = toText
+
+if (process.env.TEST === 'testCredentials') {
+  exports.testCredentials = testCredentials
+  exports.scheduleTestCredentials = scheduleTestCredentials
+}

@@ -72,11 +72,11 @@ describe('renewKey', () => {
     const oldUUID = safeApi.publicKey.uuid
     var oldPem = safeApi.publicKey.pem
 
-    const [response, error] = await safeApi.renewKey()
+    const [res, error] = await safeApi.renewKey()
 
     assert(safeApi.publicKey.uuid === oldUUID)
     assert(safeApi.publicKey.pem === oldPem)
-    assert.deepStrictEqual(response, { error: 'test' })
-    assert(error === undefined)
+    assert(res === null)
+    assert.deepStrictEqual(error, { error: 'test' })
   })
 })

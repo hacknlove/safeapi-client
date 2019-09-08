@@ -1,32 +1,41 @@
-const safeApi = require('../')
+process.env.TEST = 'testCredentials'
+const safeApi = require('../src')
 const fetchHelper = require('@hacknlove/fetchhelper')
 
 const fetch = jest.fn()
 
 fetchHelper.fetch = fetch
 
-const ok = Promise.resolve({
-  ok: true,
-  json () {
-    return 'uuid'
-  }
-})
-const netError = Promise.resolve({
-  ok: false
-})
-const badCredentials = Promise.resolve({
-  ok: true,
-  json () {
-    return { error: true }
-  }
-})
+function ok () {
+  return Promise.resolve({
+    ok: true,
+    json () {
+      return 'uuid'
+    }
+  })
+}
+
+function netError () {
+  return Promise.resolve({
+    ok: false
+  })
+}
+
+function badCredentials () {
+  return Promise.resolve({
+    ok: true,
+    json () {
+      return {
+        error: true,
+        authError: true
+      }
+    }
+  })
+}
 
 beforeEach(async () => {
   jest.useFakeTimers()
-  safeApi.conf.server = 'test/'
-  fetch.mockImplementation((url, options) => {
-    return ok
-  })
+  fetch.mockImplementation(ok)
   await safeApi.createKey()
   fetch.mockReset()
   jest.useFakeTimers()
@@ -35,43 +44,28 @@ beforeEach(async () => {
 afterEach(() => {
   safeApi.logout()
 })
+
 describe('testCredentials', () => {
   it('llama a GET /key', async () => {
-    expect.assertions(1)
-    fetch.mockImplementation((url, options) => {
-      expect(true).toBe(true)
-      assert(url === 'test/key')
-      assert(options.method === 'GET')
-      return ok
-    })
+    fetch.mockImplementation(ok)
     await safeApi.testCredentials()
+    assert(fetch.mock.calls[0][0] === 'key/')
+    assert(fetch.mock.calls[0][1].method === 'GET')
     assert(setTimeout.mock.calls.length === 1)
     assert(clearTimeout.mock.calls.length === 1)
   })
   it('si se produce un error de red no desloguea', async () => {
-    expect.assertions(1)
-    fetch.mockImplementation(() => {
-      expect(true).toBe(true)
-      return netError
-    })
+    fetch.mockImplementation(netError)
     await safeApi.testCredentials()
     assert(safeApi.publicKey.uuid !== '')
   })
   it('si devuelve ok no desloguea', async () => {
-    expect.assertions(1)
-    fetch.mockImplementation(() => {
-      expect(true).toBe(true)
-      return ok
-    })
+    fetch.mockImplementation(ok)
     await safeApi.testCredentials()
     assert(safeApi.publicKey.uuid !== '')
   })
   it('si devuelve error desloguea', async () => {
-    expect.assertions(1)
-    fetch.mockImplementation(() => {
-      expect(true).toBe(true)
-      return badCredentials
-    })
+    fetch.mockImplementation(badCredentials)
     await safeApi.testCredentials()
     assert(safeApi.publicKey.uuid === '')
   })
