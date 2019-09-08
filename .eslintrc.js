@@ -18,6 +18,7 @@ module.exports = {
     assert: false
   },
   rules: {
+    'no-prototype-builtins': 0,
     'jest/no-test-callback': 0,
     'jest/no-test-return-statement': 0,
     'jest/no-hooks': 0,

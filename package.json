@@ -4,7 +4,10 @@
   "description": "criptografically signed fetch requests",
   "main": "./src/index.js",
   "files": [
-    "/src"
+    "/src",
+    "/onGet.js",
+    "/react.js",
+    "/file.js"
   ],
   "scripts": {
     "test": "jest --watch",

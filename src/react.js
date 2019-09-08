@@ -1,40 +1,23 @@
 const { useState, useEffect } = require('react')
-const isDifferent = require('isdifferent')
+const { onGet, setResponse, refresh } = require('./onGet')
 const {
-  fetch,
   onUuidChange,
   publicKey
 } = require('.')
 
-function useFetch (url, options, first, interval = 3000) {
-  async function refresh () {
-    const response = await fetch(url, options)
-    if (cancelled) {
-      return
-    }
-    if (isDifferent(value, response)) {
-      return set(response)
-    }
-  }
+function useGet (url, first = [], interval = 30000) {
+  const [value, set] = useState(first)
+  useEffect(() => {
+    const unsuscribe = onGet(url, (response) => {
+      set(response)
+    }, interval, first)
 
-  const [value, set] = useState(() => {
-    refresh()
-    return [first]
-  })
-  var cancelled = false
-
-  useEffect(() => () => {
-    cancelled = true
+    return () => {
+      unsuscribe()
+    }
   }, [])
 
-  useEffect(() => {
-    var i = setInterval(() => {
-      refresh()
-    }, interval)
-    return () => clearInterval(i)
-  }, [value])
-
-  return [value[0], refresh, value[1]]
+  return value
 }
 
 function useUUID () {
@@ -45,5 +28,7 @@ function useUUID () {
   return value
 }
 
-module.exports.useFetch = useFetch
-module.exports.useUUID = useUUID
+exports.useGet = useGet
+exports.useUUID = useUUID
+exports.setResponse = setResponse
+exports.refresh = refresh

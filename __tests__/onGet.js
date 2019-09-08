@@ -1,15 +1,17 @@
-import onGet from '../src/onGet'
+import onGet, { createTimeout } from '../src/onGet'
 
-jest.mock('../src')
-
-beforeEach(() => {
-  Object.keys(onGet.endpoints).forEach(k => {
-    clearTimeout(onGet.endpoints[k].timeout)
-    delete onGet.endpoints[k]
-  })
-})
+jest.mock('../')
+import safeApi from '../'
 
 describe('createEndpoint', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    Object.keys(onGet.endpoints).forEach(k => {
+      clearTimeout(onGet.endpoints[k].timeout)
+      delete onGet.endpoints[k]
+    })
+  })
+
   it('creates the endpoint if not exists', () => {
     onGet.createEndpoint('hola')
     assert.deepStrictEqual(onGet.endpoints, {
@@ -17,7 +19,7 @@ describe('createEndpoint', () => {
         url: 'hola',
         callbacks: {},
         intervals: {},
-        min: Infinity,
+        minInterval: Infinity,
         response: undefined,
         last: 0
       }
@@ -31,7 +33,7 @@ describe('createEndpoint', () => {
         url: 'hola',
         callbacks: {},
         intervals: {},
-        min: Infinity,
+        minInterval: Infinity,
         response: undefined,
         last: 0
       }
@@ -40,6 +42,14 @@ describe('createEndpoint', () => {
 })
 
 describe('addNewSubscription', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    Object.keys(onGet.endpoints).forEach(k => {
+      clearTimeout(onGet.endpoints[k].timeout)
+      delete onGet.endpoints[k]
+    })
+  })
+
   it('creates a new subscription', () => {
     onGet.addNewSuscription('hola')
 
@@ -68,5 +78,39 @@ describe('addNewSubscription', () => {
   it('returns a function', () => {
     const unsuscribe = onGet.addNewSuscription('hola')
     assert(typeof unsuscribe === 'function')
+  })
+  it('unsuscribe elimina la suscripcion', () => {
+    onGet.addNewSuscription('hola')
+    onGet.addNewSuscription('hola')
+    onGet.addNewSuscription('hola')()
+    onGet.addNewSuscription('hola')()
+    assert(Object.keys(onGet.endpoints.hola.callbacks).length === 2)
+  })
+  it('tras eliminar todas las suscripciones elimina el endpoint', () => {
+    ;[
+      onGet.addNewSuscription('hola'),
+      onGet.addNewSuscription('hola'),
+      onGet.addNewSuscription('hola'),
+      onGet.addNewSuscription('hola')].forEach(cb => cb())
+    assert(onGet.endpoints.hola === undefined)
+  })
+})
+
+describe('onGet', () => {
+  var cb1 = jest.fn()
+  var cb2 = jest.fn()
+  beforeAll(() => {
+    jest.useFakeTimers()
+    Object.keys(onGet.endpoints).forEach(k => {
+      clearTimeout(onGet.endpoints[k].timeout)
+      delete onGet.endpoints[k]
+    })
+  })
+
+  describe('first time', () => {
+    onGet.onGet('hola', cb1, 60000)
+    it('clears timeout undefined', () => {
+      assert(clearTimeout.mock.calls[0][0] === undefined)
+    })
   })
 })
