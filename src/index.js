@@ -15,11 +15,10 @@ var publicKey = {
   uuid: ''
 }
 
-const callbacks = {}
-
 var conf = {
   expiresIn: 120,
   checkInterval: 300,
+  getInterval: 300,
   server: ''
 }
 
@@ -41,8 +40,12 @@ var pem = ''
 
 var nextTestCredencials
 
+const onUUIDcallbacks = {}
+
+const onFetchCallbacks = {}
+
 function callCallbacks (reason) {
-  Object.values(callbacks).forEach(cb => cb(publicKey.uuid, reason))
+  Object.values(onUUIDcallbacks).forEach(cb => cb(publicKey.uuid, reason))
 }
 
 async function createKey (data, alg) {
@@ -179,15 +182,39 @@ async function newKey (alg) {
   return publicKey.pem
 }
 
+function onGet (url, callback, interval) {
+  var fetchHash = hash({
+    method: options.method || 'GET',
+    url,
+    body: options.body || {}
+  })
+
+  onFetchCallbacks[fetchHash] = onFetchCallbacks[fetchHash] || {
+    callbacks: {},
+    intervals: {},
+    response:
+    last: 0
+  }
+
+  var sk
+  do {
+    sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
+  } while (onFetchCallbacks[fetchHash].callbacks[sk])
+
+  onFetchCallbacks[fetchHash].callbacks[sk] = callback
+  onFetchCallbacks[fetchHash].internval[sk] = interval || conf.getInterval
+
+}
+
 function onUuidChange (callback) {
   var sk
   do {
     sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
-  } while (callbacks[sk])
+  } while (onUUIDcallbacks[sk])
 
-  callbacks[sk] = callback
+  onUUIDcallbacks[sk] = callback
   return () => {
-    delete callbacks[sk]
+    delete onUUIDcallbacks[sk]
   }
 }
 
@@ -275,18 +302,9 @@ async function toText () {
 }
 
 function useFetch (url, options, first, interval = 3000) {
-  async function refresh (optimistic) {
-    if (optimistic && isDifferent(value, [optimistic, undefined])) {
-      set([optimistic, undefined])
-    }
+  async function refresh () {
     const response = await fetch(url, options)
     if (cancelled) {
-      return
-    }
-    if (optimistic) {
-      if (isDifferent([optimistic, undefined], response)) {
-        return set(response)
-      }
       return
     }
     if (isDifferent(value, response)) {
@@ -296,7 +314,7 @@ function useFetch (url, options, first, interval = 3000) {
 
   const [value, set] = useState(() => {
     refresh()
-    return [first, refresh]
+    return [first]
   })
   var cancelled = false
 
