@@ -1,12 +1,9 @@
-const { useState, useEffect } = require('react')
-const jwt = require('jsonwebtoken')
-const shajs = require('sha.js')
-const jose = require('node-jose')
-const saveAs = require('file-saver')
-const { decrypt, encrypt } = require('./symetric')
 const { passtokey } = require('./passtokey')
 const fetchHelper = require('@hacknlove/fetchhelper')
-const isDifferent = require('isdifferent')
+const jwt = require('jsonwebtoken')
+const shajs = require('sha.js')
+const { decrypt, encrypt } = require('./symetric')
+const jose = require('node-jose')
 
 var algorithm = 'ES384'
 
@@ -14,6 +11,10 @@ var publicKey = {
   pem: '',
   uuid: ''
 }
+
+var nextTestCredencials
+
+const onUUIDcallbacks = {}
 
 var conf = {
   expiresIn: 120,
@@ -37,12 +38,6 @@ const creation = {
 var password = ''
 
 var pem = ''
-
-var nextTestCredencials
-
-const onUUIDcallbacks = {}
-
-const onFetchCallbacks = {}
 
 function callCallbacks (reason) {
   Object.values(onUUIDcallbacks).forEach(cb => cb(publicKey.uuid, reason))
@@ -87,29 +82,6 @@ async function fetch (url, options = {}) {
     scheduleTestCredentials()
   }
   return [res, error]
-}
-
-async function fromFile () {
-  const text = await new Promise((resolve, reject) => {
-    const clean = setTimeout(() => {
-      reject(new Error('TimedOut'))
-    }, 60000)
-
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.key'
-    input.click()
-    input.onchange = e => {
-      var file = e.target.files[0]
-      var reader = new FileReader()
-      reader.readAsText(file, 'UTF-8')
-      reader.onload = readerEvent => {
-        clearTimeout(clean)
-        resolve(readerEvent.target.result)
-      }
-    }
-  })
-  return fromText(text)
 }
 
 async function fromText (text) {
@@ -182,30 +154,6 @@ async function newKey (alg) {
   return publicKey.pem
 }
 
-function onGet (url, callback, interval) {
-  var fetchHash = hash({
-    method: options.method || 'GET',
-    url,
-    body: options.body || {}
-  })
-
-  onFetchCallbacks[fetchHash] = onFetchCallbacks[fetchHash] || {
-    callbacks: {},
-    intervals: {},
-    response:
-    last: 0
-  }
-
-  var sk
-  do {
-    sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
-  } while (onFetchCallbacks[fetchHash].callbacks[sk])
-
-  onFetchCallbacks[fetchHash].callbacks[sk] = callback
-  onFetchCallbacks[fetchHash].internval[sk] = interval || conf.getInterval
-
-}
-
 function onUuidChange (callback) {
   var sk
   do {
@@ -241,13 +189,19 @@ async function renewKey (data = {}, alg) {
   return [res, err]
 }
 
-function setPlainPassword (pass) {
-  password = passtokey(pass || '')
-  return password
+function scheduleTestCredentials () {
+  clearTimeout(nextTestCredencials)
+  nextTestCredencials = setTimeout(testCredentials, conf.checkInterval * 1000)
+  return true
 }
 
 function setHashedPassword (pass) {
   password = pass
+}
+
+function setPlainPassword (pass) {
+  password = passtokey(pass || '')
+  return password
 }
 
 async function sign (options) {
@@ -279,65 +233,12 @@ async function testCredentials () {
   return true
 }
 
-function scheduleTestCredentials () {
-  clearTimeout(nextTestCredencials)
-  nextTestCredencials = setTimeout(testCredentials, conf.checkInterval * 1000)
-  return true
-}
-
-async function toFile () {
-  const signedCredentials = await toText()
-
-  var blob = new Blob([signedCredentials], { type: 'text/plain;charset=utf-8' })
-
-  saveAs(blob, `${publicKey.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
-}
-
 async function toText () {
   return encrypt({
     uuid: publicKey.uuid,
     pem,
     algorithm: algorithm
   }, password)
-}
-
-function useFetch (url, options, first, interval = 3000) {
-  async function refresh () {
-    const response = await fetch(url, options)
-    if (cancelled) {
-      return
-    }
-    if (isDifferent(value, response)) {
-      return set(response)
-    }
-  }
-
-  const [value, set] = useState(() => {
-    refresh()
-    return [first]
-  })
-  var cancelled = false
-
-  useEffect(() => () => {
-    cancelled = true
-  }, [])
-
-  useEffect(() => {
-    var i = setInterval(() => {
-      refresh()
-    }, interval)
-    return () => clearInterval(i)
-  }, [value])
-
-  return [value[0], refresh, value[1]]
-}
-
-function useUUID () {
-  const [value, set] = useState(publicKey.uuid)
-  useEffect(() => onUuidChange(uuid => {
-    set(uuid)
-  }))
-  return value
 }
 
 function waitUntilUUID () {
@@ -350,23 +251,18 @@ function waitUntilUUID () {
     })
   })
 }
+
 setPlainPassword()
 
-module.exports.conf = conf
-module.exports.createKey = createKey
-module.exports.fetch = fetch
-module.exports.fromFile = fromFile
-module.exports.fromText = fromText
-module.exports.getHashedPassword = getHashedPassword
-module.exports.logout = logout
-module.exports.onUuidChange = onUuidChange
-module.exports.publicKey = publicKey
-module.exports.renewKey = renewKey
-module.exports.scheduleTestCredentials = scheduleTestCredentials
-module.exports.setHashedPassword = setHashedPassword
-module.exports.setPlainPassword = setPlainPassword
-module.exports.testCredentials = testCredentials
-module.exports.toFile = toFile
-module.exports.toText = toText
-module.exports.useFetch = useFetch
-module.exports.useUUID = useUUID
+exports.conf = conf
+exports.createKey = createKey
+exports.fetch = fetch
+exports.fromText = fromText
+exports.hash = hash
+exports.getHashedPassword = getHashedPassword
+exports.logout = logout
+exports.onUuidChange = onUuidChange
+exports.publicKey = publicKey
+exports.renewKey = renewKey
+exports.setHashedPassword = setHashedPassword
+exports.toText = toText
