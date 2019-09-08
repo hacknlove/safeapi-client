@@ -6,6 +6,7 @@ const saveAs = require('file-saver')
 const { decrypt, encrypt } = require('./symetric')
 const { passtokey } = require('./passtokey')
 const fetchHelper = require('@hacknlove/fetchhelper')
+const isDifferent = require('isdifferent')
 
 var algorithm = 'ES384'
 
@@ -50,6 +51,9 @@ async function createKey (data, alg) {
 }
 
 async function fetch (url, options = {}) {
+  if (!pem) {
+    await waitUntilUUID()
+  }
   var {
     method = 'GET',
     body,
@@ -270,6 +274,46 @@ async function toText () {
   }, password)
 }
 
+function useFetch (url, options, first, interval = 3000) {
+  async function refresh (optimistic) {
+    if (optimistic && isDifferent(value, [optimistic, undefined])) {
+      set([optimistic, undefined])
+    }
+    const response = await fetch(url, options)
+    if (cancelled) {
+      return
+    }
+    if (optimistic) {
+      if (isDifferent([optimistic, undefined], response)) {
+        return set(response)
+      }
+      return
+    }
+    if (isDifferent(value, response)) {
+      return set(response)
+    }
+  }
+
+  const [value, set] = useState(() => {
+    refresh()
+    return [first, refresh]
+  })
+  var cancelled = false
+
+  useEffect(() => () => {
+    cancelled = true
+  }, [])
+
+  useEffect(() => {
+    var i = setInterval(() => {
+      refresh()
+    }, interval)
+    return () => clearInterval(i)
+  }, [value])
+
+  return [value[0], refresh, value[1]]
+}
+
 function useUUID () {
   const [value, set] = useState(publicKey.uuid)
   useEffect(() => onUuidChange(uuid => {
@@ -278,22 +322,33 @@ function useUUID () {
   return value
 }
 
+function waitUntilUUID () {
+  return new Promise(resolve => {
+    var uncallback = onUuidChange(() => {
+      if (pem) {
+        resolve()
+        uncallback()
+      }
+    })
+  })
+}
 setPlainPassword()
 
+module.exports.conf = conf
 module.exports.createKey = createKey
-module.exports.fromText = fromText
 module.exports.fetch = fetch
 module.exports.fromFile = fromFile
+module.exports.fromText = fromText
+module.exports.getHashedPassword = getHashedPassword
+module.exports.logout = logout
+module.exports.onUuidChange = onUuidChange
+module.exports.publicKey = publicKey
+module.exports.renewKey = renewKey
+module.exports.scheduleTestCredentials = scheduleTestCredentials
+module.exports.setHashedPassword = setHashedPassword
+module.exports.setPlainPassword = setPlainPassword
+module.exports.testCredentials = testCredentials
 module.exports.toFile = toFile
 module.exports.toText = toText
-module.exports.setPlainPassword = setPlainPassword
-module.exports.getHashedPassword = getHashedPassword
-module.exports.setHashedPassword = setHashedPassword
-module.exports.publicKey = publicKey
-module.exports.onUuidChange = onUuidChange
+module.exports.useFetch = useFetch
 module.exports.useUUID = useUUID
-module.exports.logout = logout
-module.exports.renewKey = renewKey
-module.exports.conf = conf
-module.exports.testCredentials = testCredentials
-module.exports.scheduleTestCredentials = scheduleTestCredentials
