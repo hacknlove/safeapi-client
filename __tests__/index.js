@@ -6,7 +6,6 @@ describe('exports', () => {
     assert(safeApi.createKey)
     assert(safeApi.fetch)
     assert(safeApi.fromText)
-    assert(safeApi.hash)
     assert(safeApi.getHashedPassword)
     assert(safeApi.logout)
     assert(safeApi.publicKey)

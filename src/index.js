@@ -258,7 +258,6 @@ exports.conf = conf
 exports.createKey = createKey
 exports.fetch = fetch
 exports.fromText = fromText
-exports.hash = hash
 exports.getHashedPassword = getHashedPassword
 exports.logout = logout
 exports.onUuidChange = onUuidChange
