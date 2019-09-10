@@ -133,7 +133,7 @@ function hash (request) {
     body
   } = request
 
-  const parsedUrl = new URL(url, location)
+  const parsedUrl = new URL(url, conf.server)
   console.log({
     body,
     hostname: parsedUrl.hostname,
