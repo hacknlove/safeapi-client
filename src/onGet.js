@@ -3,6 +3,11 @@ const { conf, fetch } = require('.')
 
 const endpoints = {}
 
+/**
+ * Inicializa los datos para gestional las peticiones GET a una url
+ * @param {string} url url a la que se harań los GET
+ * @returns {undefined}
+ */
 function createEndpoint (url) {
   if (!endpoints[url]) {
     endpoints[url] = {
@@ -10,15 +15,20 @@ function createEndpoint (url) {
       callbacks: {},
       intervals: {},
       minInterval: Infinity,
-      response: undefined
+      last: 0
     }
   }
 }
 
+/**
+ * Inicializa los datos para gestionar una nueva suscripción, y devuelve la función para desuscribirse
+ * @param {string} url url a la que se harán los GET
+ * @param {function} callback función que será ejecutada cada vez que cambie la respuesta al GET
+ * @param {number} interval intervalo en segundos para volver a realizar el GET
+ * @return {function} función para desuscribirse
+ */
 function addNewSuscription (url, callback, interval) {
-  createEndpoint(url)
-
-  interval = Math.max(interval || conf.checkInterval, 500)
+  interval = Math.max(interval || conf.checkInterval, 1) * 1000
 
   const endpoint = endpoints[url]
   var sk
@@ -48,26 +58,30 @@ function addNewSuscription (url, callback, interval) {
 }
 
 function onGet (url, cb, interval, first) {
+  createEndpoint(url)
   const unsuscribe = addNewSuscription(url, cb, interval)
   const endpoint = endpoints[url]
   endpoint.response = endpoint.response || first || []
   cb(endpoint.response)
-  refresh(url)
+  if (Date.now() - endpoint.last > 500) {
+    refresh(url)
+  }
   return unsuscribe
 }
 
 function setResponse (url, response, pospone) {
   const endpoint = endpoints[url]
   if (!endpoint) {
-    return console.warn('¿Eliminado?', url)
+    return
   }
+
+  endpoint.last = Date.now()
 
   if (pospone) {
     posponeGet(endpoint)
   }
 
   if (isDifferent(response, endpoint.response)) {
-    console.log('esDiferente')
     endpoint.response = response
     Object.values(endpoint.callbacks).forEach(cb => cb(endpoint.response))
   }
@@ -86,7 +100,7 @@ function posponeGet (endpoint) {
 async function refresh (url) {
   const endpoint = endpoints[url]
   if (!endpoint) {
-    return console.warn('¿Eliminado?', url)
+    return
   }
   posponeGet(endpoint)
   const response = await fetch(endpoint.url)
@@ -96,8 +110,6 @@ async function refresh (url) {
 function cached (url) {
   const endpoint = endpoints[url]
   if (!endpoint) {
-    console.warn('¿Eliminado?', url)
-    console.log(endpoints)
     return []
   }
   return endpoints[url].response

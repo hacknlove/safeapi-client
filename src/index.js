@@ -134,6 +134,13 @@ function hash (request) {
   } = request
 
   const parsedUrl = new URL(url, location)
+  console.log({
+    body,
+    hostname: parsedUrl.hostname,
+    method,
+    originalUrl: parsedUrl.pathname + parsedUrl.search,
+    protocol: parsedUrl.protocol.replace(/:$/, '')
+  })
   return shajs('sha256').update(JSON.stringify({
     body,
     hostname: parsedUrl.hostname,
