@@ -194,9 +194,11 @@ async function renewKey (data = {}, alg) {
 }
 
 function scheduleTestCredentials () {
+  if (!conf.checkInterval) {
+    return
+  }
   clearTimeout(nextTestCredencials)
   nextTestCredencials = setTimeout(testCredentials, conf.checkInterval * 1000)
-  return true
 }
 
 function setHashedPassword (pass) {
