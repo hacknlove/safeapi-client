@@ -5,7 +5,7 @@ const {
   publicKey
 } = require('.')
 
-function useGet (url, first = [], interval = 30000) {
+function useGet (url, first = [], interval = 30) {
   const [value, set] = useState(first)
   useEffect(() => {
     const unsuscribe = onGet(url, (response) => {
