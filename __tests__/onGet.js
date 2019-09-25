@@ -25,7 +25,7 @@ describe('createEndpoint', () => {
       }
     })
   })
-  it('does nothing if the endpoings exists', () => {
+  it('does nothing if the endpoints exists', () => {
     onGet.createEndpoint('hola')
     onGet.createEndpoint('hola')
     assert.deepStrictEqual(onGet.endpoints, {
@@ -51,47 +51,47 @@ describe('addNewSubscription', () => {
   })
 
   it('creates a new subscription', () => {
-    onGet.addNewSuscription('hola')
+    onGet.addNewSubscription('hola')
 
     assert(Object.keys(onGet.endpoints.hola.callbacks).length === 1)
   })
   it('creates as many subscriptions as called', () => {
-    onGet.addNewSuscription('hola')
-    onGet.addNewSuscription('hola')
-    onGet.addNewSuscription('hola')
-    onGet.addNewSuscription('hola')
+    onGet.addNewSubscription('hola')
+    onGet.addNewSubscription('hola')
+    onGet.addNewSubscription('hola')
+    onGet.addNewSubscription('hola')
 
     assert(Object.keys(onGet.endpoints.hola.callbacks).length === 4)
   })
   it('set minInterval to the minimum', () => {
-    onGet.addNewSuscription('hola', undefined, 50000)
+    onGet.addNewSubscription('hola', undefined, 50000)
     assert(onGet.endpoints.hola.minInterval === 50000)
-    onGet.addNewSuscription('hola', undefined, 3000)
+    onGet.addNewSubscription('hola', undefined, 3000)
     assert(onGet.endpoints.hola.minInterval === 3000)
-    onGet.addNewSuscription('hola', undefined, 80000)
+    onGet.addNewSubscription('hola', undefined, 80000)
     assert(onGet.endpoints.hola.minInterval === 3000)
-    onGet.addNewSuscription('hola', undefined, 100)
+    onGet.addNewSubscription('hola', undefined, 100)
     assert(onGet.endpoints.hola.minInterval === 500)
 
     assert(Object.keys(onGet.endpoints.hola.callbacks).length === 4)
   })
   it('returns a function', () => {
-    const unsuscribe = onGet.addNewSuscription('hola')
-    assert(typeof unsuscribe === 'function')
+    const unsubscribe = onGet.addNewSubscription('hola')
+    assert(typeof unsubscribe === 'function')
   })
-  it('unsuscribe elimina la suscripcion', () => {
-    onGet.addNewSuscription('hola')
-    onGet.addNewSuscription('hola')
-    onGet.addNewSuscription('hola')()
-    onGet.addNewSuscription('hola')()
+  it('unsubscribe elimina la suscripción', () => {
+    onGet.addNewSubscription('hola')
+    onGet.addNewSubscription('hola')
+    onGet.addNewSubscription('hola')()
+    onGet.addNewSubscription('hola')()
     assert(Object.keys(onGet.endpoints.hola.callbacks).length === 2)
   })
   it('tras eliminar todas las suscripciones elimina el endpoint', () => {
     ;[
-      onGet.addNewSuscription('hola'),
-      onGet.addNewSuscription('hola'),
-      onGet.addNewSuscription('hola'),
-      onGet.addNewSuscription('hola')].forEach(cb => cb())
+      onGet.addNewSubscription('hola'),
+      onGet.addNewSubscription('hola'),
+      onGet.addNewSubscription('hola'),
+      onGet.addNewSubscription('hola')].forEach(cb => cb())
     assert(onGet.endpoints.hola === undefined)
   })
 })

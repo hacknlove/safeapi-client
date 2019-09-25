@@ -4,8 +4,8 @@ const { conf, fetch } = require('.')
 const endpoints = {}
 
 /**
- * Inicializa los datos para gestional las peticiones GET a una url
- * @param {string} url url a la que se harań los GET
+ * Inicializa los datos para gestiona las peticiones GET a una url
+ * @param {string} url url a la que se harán los GET
  * @returns {undefined}
  */
 function createEndpoint (url) {
@@ -27,7 +27,7 @@ function createEndpoint (url) {
  * @param {number} interval intervalo en segundos para volver a realizar el GET
  * @return {function} función para desuscribirse
  */
-function addNewSuscription (url, callback, interval) {
+function addNewSubscription (url, callback, interval) {
   interval = Math.max(interval || conf.checkInterval, 1) * 1000
 
   const endpoint = endpoints[url]
@@ -40,9 +40,9 @@ function addNewSuscription (url, callback, interval) {
   endpoint.intervals[sk] = interval
   endpoint.minInterval = Math.min(endpoint.minInterval, ...Object.values(endpoint.intervals))
 
-  const unsuscribe = () => {
+  const unsubscribe = () => {
     if (!endpoint.callbacks.hasOwnProperty(sk)) {
-      return console.warn('You have yet unsuscribed.')
+      return console.warn('You have yet unsubscribed.')
     }
     delete endpoint.callbacks[sk]
     delete endpoint.intervals[sk]
@@ -54,19 +54,19 @@ function addNewSuscription (url, callback, interval) {
     }
   }
 
-  return unsuscribe
+  return unsubscribe
 }
 
 function onGet (url, cb, interval, first) {
   createEndpoint(url)
-  const unsuscribe = addNewSuscription(url, cb, interval)
+  const unsubscribe = addNewSubscription(url, cb, interval)
   const endpoint = endpoints[url]
   endpoint.response = endpoint.response || first || []
   cb(endpoint.response)
   if (Date.now() - endpoint.last > 500) {
     refresh(url)
   }
-  return unsuscribe
+  return unsubscribe
 }
 
 function setResponse (url, response, pospone) {
@@ -123,6 +123,6 @@ exports.cached = cached
 if (process.env.NODE_ENV === 'test') {
   exports.endpoints = endpoints
   exports.createEndpoint = createEndpoint
-  exports.addNewSuscription = addNewSuscription
+  exports.addNewSubscription = addNewSubscription
   exports.posponeGet = posponeGet
 }

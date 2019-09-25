@@ -8,12 +8,12 @@ const {
 function useGet (url, first = [], interval = 30) {
   const [value, set] = useState(first)
   useEffect(() => {
-    const unsuscribe = onGet(url, (response) => {
+    const unsubscribe = onGet(url, (response) => {
       set(response)
     }, interval, first)
 
     return () => {
-      unsuscribe()
+      unsubscribe()
     }
   }, [])
 
