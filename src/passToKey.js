@@ -1,4 +1,4 @@
-const seedrandom = require('seedrandom')
+import seedrandom from 'seedrandom'
 
 var mybtoa
 
@@ -8,7 +8,7 @@ if (process.browser) {
   mybtoa = text => Buffer.from(text).toString('base64')
 }
 
-function passtokey (password) {
+export function passToKey (password) {
   const rnd = seedrandom(password)
   const buffer = new ArrayBuffer(32)
   const view = new Uint8Array(buffer)
@@ -18,5 +18,3 @@ function passtokey (password) {
   }
   return mybtoa(String.fromCharCode.apply(null, view))
 }
-
-exports.passtokey = passtokey

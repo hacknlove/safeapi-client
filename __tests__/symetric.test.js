@@ -1,4 +1,4 @@
-const { encrypt, decrypt } = require('../src/symetric')
+const { encrypt, decrypt } = require('../src/symmetric')
 
 test('encrypt devuelve un string', async () => {
   const object = {

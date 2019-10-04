@@ -1,9 +1,9 @@
-const { passtokey } = require('./passtokey')
-const fetchHelper = require('@hacknlove/fetchhelper')
-const jwt = require('jsonwebtoken')
-const shajs = require('sha.js')
-const { decrypt, encrypt } = require('./symetric')
-const jose = require('node-jose')
+import { passToKey } from './passToKey'
+import fetchHelper from '@hacknlove/fetchhelper'
+import jwt from 'jsonwebtoken'
+import shajs from 'sha.js'
+import { decrypt, encrypt } from './symmetric'
+import jose from 'node-jose'
 
 var algorithm = 'ES384'
 
@@ -12,9 +12,9 @@ var publicKey = {
   uuid: ''
 }
 
-var nextTestCredencials
+var nextTestCredenTials
 
-const onUUIDcallbacks = {}
+const onUUIDCallbacks = {}
 
 var conf = {
   expiresIn: 120,
@@ -40,7 +40,7 @@ var password = ''
 var pem = ''
 
 function callCallbacks (reason) {
-  Object.values(onUUIDcallbacks).forEach(cb => cb(publicKey.uuid, reason))
+  Object.values(onUUIDCallbacks).forEach(cb => cb(publicKey.uuid, reason))
 }
 
 async function createKey (data, alg) {
@@ -154,7 +154,7 @@ function logout (reason) {
   publicKey.uuid = ''
   publicKey.pem = ''
   pem = ''
-  clearTimeout(nextTestCredencials)
+  clearTimeout(nextTestCredenTials)
   callCallbacks(reason)
 }
 
@@ -162,11 +162,11 @@ function onUuidChange (callback) {
   var sk
   do {
     sk = Math.random().toString(36).substr(2) + (Date.now() % 1000).toString(36)
-  } while (onUUIDcallbacks[sk])
+  } while (onUUIDCallbacks[sk])
 
-  onUUIDcallbacks[sk] = callback
+  onUUIDCallbacks[sk] = callback
   return () => {
-    delete onUUIDcallbacks[sk]
+    delete onUUIDCallbacks[sk]
   }
 }
 
@@ -197,8 +197,8 @@ function scheduleTestCredentials () {
   if (!conf.checkInterval) {
     return
   }
-  clearTimeout(nextTestCredencials)
-  nextTestCredencials = setTimeout(testCredentials, conf.checkInterval * 1000)
+  clearTimeout(nextTestCredenTials)
+  nextTestCredenTials = setTimeout(testCredentials, conf.checkInterval * 1000)
 }
 
 function setHashedPassword (pass) {
@@ -206,7 +206,7 @@ function setHashedPassword (pass) {
 }
 
 function setPlainPassword (pass) {
-  password = passtokey(pass || '')
+  password = passToKey(pass || '')
   return password
 }
 
@@ -252,10 +252,10 @@ async function toText () {
 
 function waitUntilUUID () {
   return new Promise(resolve => {
-    var uncallback = onUuidChange(() => {
+    var unSubscribe = onUuidChange(() => {
       if (pem) {
         resolve()
-        uncallback()
+        unSubscribe()
       }
     })
   })

@@ -34,6 +34,7 @@ function badCredentials () {
 }
 
 beforeEach(async () => {
+  safeApi.conf.server = 'http://test/'
   jest.useFakeTimers()
   fetch.mockImplementation(ok)
   await safeApi.createKey()

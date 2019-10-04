@@ -1,7 +1,7 @@
 {
   "name": "safeapi-client",
-  "version": "2.5.0",
-  "description": "criptografically signed fetch requests",
+  "version": "2.5.1",
+  "description": "cryptographically signed fetch requests",
   "main": "./src/index.js",
   "files": [
     "/src",
@@ -37,7 +37,7 @@
   "dependencies": {
     "@hacknlove/fetchhelper": "^1.4.2",
     "file-saver": "^2.0.2",
-    "isdifferent": "^1.0.1",
+    "isdifferent": "^2.0.0",
     "jsonwebtoken": "^8.5.1",
     "node-jose": "^1.1.3",
     "seedrandom": "^3.0.3",

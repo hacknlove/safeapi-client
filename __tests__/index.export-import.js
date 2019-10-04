@@ -15,6 +15,7 @@ function ok () {
 }
 
 beforeAll(async () => {
+  safeApi.conf.server = 'http://test/'
   fetch.mockImplementation(ok)
   await safeApi.createKey()
 })
