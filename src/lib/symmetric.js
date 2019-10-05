@@ -1,6 +1,6 @@
-const jose = require('node-jose')
+import jose from 'node-jose'
 
-async function decrypt (text, password) {
+export async function decrypt (text, password) {
   const key = await jose.JWK.asKey({
     kty: 'oct',
     k: password
@@ -17,7 +17,7 @@ async function decrypt (text, password) {
   return JSON.parse(decrypted.payload.toString())
 }
 
-async function encrypt (object, password) {
+export async function encrypt (object, password) {
   const key = await jose.JWK.asKey({
     kty: 'oct',
     k: password
@@ -27,6 +27,3 @@ async function encrypt (object, password) {
     format: 'compact'
   }, key).update(JSON.stringify(object)).final()
 }
-
-exports.encrypt = encrypt
-exports.decrypt = decrypt

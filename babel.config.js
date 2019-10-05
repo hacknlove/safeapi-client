@@ -4,9 +4,6 @@ module.exports = function (api) {
   const presets = [
     [
       '@babel/preset-env'
-    ],
-    [
-      'babel-preset-power-assert'
     ]
   ]
   const plugins = []

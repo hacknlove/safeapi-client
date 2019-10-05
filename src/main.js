@@ -2,75 +2,9 @@ import { passToKey } from './passToKey'
 import fetchHelper from '@hacknlove/fetchhelper'
 import jwt from 'jsonwebtoken'
 import shajs from 'sha.js'
-import { decrypt, encrypt } from './symmetric'
+import { encrypt } from './lib/symmetric'
 import jose from 'node-jose'
 
-var algorithm = 'ES384'
-
-var publicKey = {
-  pem: '',
-  uuid: ''
-}
-
-var nextTestCredenTials
-
-const onUUIDCallbacks = {}
-
-var conf = {
-  expiresIn: 120,
-  checkInterval: 300,
-  getInterval: 300,
-  server: ''
-}
-
-const creation = {
-  RS256: ['RSA', 256],
-  RS384: ['RSA', 384],
-  RS512: ['RSA', 512],
-  PS256: ['RSA', 256],
-  PS384: ['RSA', 384],
-  PS512: ['RSA', 512],
-  ES256: ['EC', 'P-256'],
-  ES384: ['EC', 'P-384'],
-  ES512: ['EC', 'P-512']
-}
-
-var password = ''
-
-var pem = ''
-
-function callCallbacks (reason) {
-  Object.values(onUUIDCallbacks).forEach(cb => cb(publicKey.uuid, reason))
-}
-
-async function createKey (data, alg) {
-  const newAlgorithm = alg || algorithm
-
-  const key = await jose.JWK.createKey(...creation[newAlgorithm])
-  const newPublicKey = key.toPEM(false)
-
-  var [uuid, error] = await fetchHelper(`${conf.server}key`, {
-    method: 'POST',
-    json: {
-      ...data,
-      pem: newPublicKey
-    },
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-
-  if (uuid && !uuid.error) {
-    pem = key.toPEM(true)
-    publicKey.pem = newPublicKey
-    algorithm = newAlgorithm
-    publicKey.uuid = uuid
-    callCallbacks('login')
-    scheduleTestCredentials()
-  }
-
-  return [uuid, error]
-}
 
 async function fetch (url, options = {}) {
   if (!pem) {
@@ -106,20 +40,6 @@ async function fetch (url, options = {}) {
     scheduleTestCredentials()
   }
   return [res, error]
-}
-
-async function fromText (text) {
-  const credentials = await decrypt(text, password)
-  pem = credentials.pem
-  publicKey.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false)).catch(e => {
-    console.log(JSON.stringify({ credentials, text, password }))
-    throw e
-  })
-  var oldUUID = publicKey.uuid
-  publicKey.uuid = credentials.uuid
-  algorithm = credentials.algorithm
-  oldUUID !== publicKey.uuid && callCallbacks()
-  return testCredentials()
 }
 
 function getHashedPassword () {
