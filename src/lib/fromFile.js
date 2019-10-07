@@ -1,11 +1,6 @@
-const saveAs = require('file-saver')
-const {
-  fromText,
-  publicKey,
-  toText
-} = require('.')
+import { fromText } from './fromText'
 
-async function fromFile () {
+export async function fromFile () {
   const text = await new Promise((resolve, reject) => {
     const clean = setTimeout(() => {
       reject(new Error('TimedOut'))
@@ -27,14 +22,3 @@ async function fromFile () {
   })
   return fromText(text)
 }
-
-async function toFile () {
-  const signedCredentials = await toText()
-
-  var blob = new Blob([signedCredentials], { type: 'text/plain;charset=utf-8' })
-
-  saveAs(blob, `${publicKey.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true)
-}
- 
-exports.fromFile = fromFile
-exports.toFile = toFile

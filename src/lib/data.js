@@ -23,8 +23,12 @@ export const conf = {
 }
 
 export const credentials = {
+  // uuid
+  // algorithm
+  // pem (public)
 }
 
 export const secret = {
-
+  // password
+  // pem (private)
 }

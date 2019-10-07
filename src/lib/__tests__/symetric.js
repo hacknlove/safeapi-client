@@ -1,11 +1,11 @@
-const { encrypt, decrypt } = require('../src/symmetric')
+import { encrypt, decrypt } from '../symmetric'
 
 test('encrypt devuelve un string', async () => {
   const object = {
     a: 'a',
     b: 12
   }
-  assert(typeof await encrypt(object, 'password') === 'string')
+  expect(typeof await encrypt(object, 'password')).toBe('string')
 })
 
 test('decrypt descifra lo que encrypt cifra', async () => {
@@ -15,18 +15,18 @@ test('decrypt descifra lo que encrypt cifra', async () => {
   }
   const enc = await encrypt(object, 'password')
   const dec = await decrypt(enc, 'password')
-  assert.deepStrictEqual(dec, object)
+  expect(dec).toStrictEqual(object)
 })
 
 test('si la contraseña no coincide lanza error', async () => {
-  expect.assertions(1)
   const object = {
     a: 'a',
     b: 12
   }
-  jest.spyOn(console, 'warn').mockImplementation(() => {
-    expect(true).toBe(true)
-  })
+  jest.spyOn(console, 'warn').mockImplementation()
   const enc = await encrypt(object, 'password')
-  return assert.rejects(decrypt(enc, 'passward'))
+  const dec = await decrypt(enc, 'passward').catch(e => ({ error: e }))
+
+  expect(console.warn).toHaveBeenCalled()
+  expect(dec.error).not.toBeUndefined()
 })

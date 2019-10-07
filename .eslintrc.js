@@ -14,10 +14,8 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2018
   },
-  globals: {
-    assert: false
-  },
   rules: {
+    'jest/prefer-called-with': 0,
     'no-prototype-builtins': 0,
     'jest/no-test-callback': 0,
     'jest/no-test-return-statement': 0,

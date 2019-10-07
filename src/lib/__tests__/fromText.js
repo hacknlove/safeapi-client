@@ -21,12 +21,12 @@ describe('fromText', () => {
     }))
 
     secret.password = 'password'
-    fromText('text')
+    await fromText('text')
 
-    await expect(decrypt).toHaveBeenCalledWith('text', 'password')
+    expect(decrypt).toHaveBeenCalledWith('text', 'password')
     expect(secret.pem).toBe('newPem')
     expect(credentials.algorithm).toBe('newAlgorithm')
     expect(credentials.uuid).toBe('newUUID')
-    expect(credentials.publicKey).toBe('newPublicPem')
+    expect(credentials.pem).toBe('newPublicPem')
   })
 })

@@ -13,7 +13,6 @@ export async function decrypt (text, password) {
   if (decrypted.error) {
     throw decrypted.error
   }
-
   return JSON.parse(decrypted.payload.toString())
 }
 

@@ -4,29 +4,6 @@ import { credentials } from '../data'
 
 jest.mock('@hacknlove/fetchhelper')
 
-function ok () {
-  return Promise.resolve({
-    ok: true,
-    json () {
-      return 'uuid'
-    }
-  })
-}
-function netError () {
-  return Promise.resolve({
-    ok: false
-  })
-}
-
-function apiError () {
-  return Promise.resolve({
-    ok: true,
-    json () {
-      return { error: true }
-    }
-  })
-}
-
 describe('createKey', () => {
   afterEach(() => {
     Object.keys(credentials).forEach(key => delete credentials[key])

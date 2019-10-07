@@ -5,7 +5,6 @@ import { set } from 'onget'
 
 export async function fromText (text) {
   const { pem, uuid, algorithm } = await decrypt(text, secret.password)
-
   secret.pem = pem
 
   credentials.pem = await jose.JWK.asKey(pem, 'pem').then(key => key.toPEM(false))
