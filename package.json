@@ -5,8 +5,8 @@
   "files": [
     "/dist"
   ],
-  "main": "./dist/isDifferent.cjs.js",
-  "module": "dist/isDifferent.es.js",
+  "main": "./dist/safeapiclient.cjs.js",
+  "module": "dist/safeapiclient.es.js",
   "scripts": {
     "test": "jest --watch",
     "coverage": "jest --coverage",
