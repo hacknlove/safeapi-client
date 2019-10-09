@@ -11,7 +11,7 @@ export const plugin = {
     endpoint.realurl = endpoint.url.substr(PROTOCOL_LENGTH)
   },
   refresh (endpoint, eventHandler) {
-    return sFetch(endpoint.url)
+    return sFetch(endpoint.realurl)
       .then(response => {
         response.json()
           .then(eventHandler)
