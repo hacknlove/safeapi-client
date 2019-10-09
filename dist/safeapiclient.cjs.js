@@ -215,7 +215,8 @@ async function sFetch (url, options = {}) {
       body: options.body === undefined ? undefined : JSON.stringify(options.body)
     }
   ]);
-  if (options.onAuthErrorLogout && error && error.authError) {
+
+  if (conf.onAuthErrorLogout && error && error.authError) {
     logout();
   }
   return [res, error]
