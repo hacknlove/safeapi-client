@@ -1,10 +1,15 @@
 import { sFetch } from './sFetch'
 
+const PROTOCOL_LENGTH = 'safeapi://'.length
+
 export const plugin = {
   name: 'safeapi',
   regex: /^safeapi:\/\/./,
   checkInterval: 30000,
   threshold: 500,
+  getEndpoint (endpoint) {
+    endpoint.realurl = endpoint.url.substr(PROTOCOL_LENGTH)
+  },
   refresh (endpoint, eventHandler) {
     return sFetch(endpoint.url)
       .then(response => {
