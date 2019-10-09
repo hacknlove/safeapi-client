@@ -6,7 +6,7 @@ import { logout } from './logout'
 
 export async function sFetch (url, options = {}) {
   if (!secret.pem) {
-    await waitUntil('dotted://uuid')
+    await waitUntil('dotted://safeapi.uuid')
   }
 
   var {

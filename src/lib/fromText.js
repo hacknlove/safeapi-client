@@ -11,6 +11,6 @@ export async function fromText (text) {
 
   credentials.uuid = uuid
   credentials.algorithm = algorithm
-  set('dotted://uuid', uuid)
+  set('dotted://safeapi.uuid', uuid)
   return uuid
 }

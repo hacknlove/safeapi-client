@@ -6,7 +6,9 @@ import jwt from 'jsonwebtoken';
 import seedrandom from 'seedrandom';
 import saveAs from 'file-saver';
 
-set('dotted://UUID', '');
+set('dotted://safeapi', {
+  uuid: ''
+});
 
 const creation = {
   RS256: ['RSA', 256],
@@ -62,7 +64,7 @@ async function createKey (data, alg) {
     secret.pem = key.toPEM(true);
     credentials.algorithm = newAlgorithm;
     credentials.uuid = uuid;
-    set('dotted://uuid', uuid);
+    set('dotted://safeapi.uuid', uuid);
   }
 
   return [uuid, error]
@@ -103,7 +105,7 @@ async function fromText (text) {
 
   credentials.uuid = uuid;
   credentials.algorithm = algorithm;
-  set('dotted://uuid', uuid);
+  set('dotted://safeapi.uuid', uuid);
   return uuid
 }
 
@@ -155,7 +157,9 @@ function logout (reason) {
   credentials.pem = '';
   secret.pem = '';
   secret.password = '';
-  set('dotted://uuid');
+  set('dotted://safeapi', {
+    logout: reason
+  });
 }
 
 async function sign (options) {
@@ -180,7 +184,7 @@ async function sign (options) {
 
 async function sFetch (url, options = {}) {
   if (!secret.pem) {
-    await waitUntil('dotted://uuid');
+    await waitUntil('dotted://safeapi.uuid');
   }
 
   var {

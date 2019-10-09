@@ -5,5 +5,7 @@ export function logout (reason) {
   credentials.pem = ''
   secret.pem = ''
   secret.password = ''
-  set('dotted://uuid')
+  set('dotted://safeapi', {
+    logout: reason
+  })
 }

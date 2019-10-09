@@ -25,7 +25,7 @@ export async function createKey (data, alg) {
     secret.pem = key.toPEM(true)
     credentials.algorithm = newAlgorithm
     credentials.uuid = uuid
-    set('dotted://uuid', uuid)
+    set('dotted://safeapi.uuid', uuid)
   }
 
   return [uuid, error]

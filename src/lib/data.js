@@ -1,6 +1,8 @@
 import { set } from 'onget'
 
-set('dotted://UUID', '')
+set('dotted://safeapi', {
+  uuid: ''
+})
 
 export const creation = {
   RS256: ['RSA', 256],
