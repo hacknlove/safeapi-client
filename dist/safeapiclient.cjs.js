@@ -109,6 +109,7 @@ async function fromText (text) {
   credentials.uuid = uuid;
   credentials.algorithm = algorithm;
   onget.set('dotted://uuid', uuid);
+  return uuid
 }
 
 async function fromFile () {
