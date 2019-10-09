@@ -19,7 +19,8 @@ export const conf = {
   expiresIn: 120,
   checkInterval: 300,
   getInterval: 300,
-  server: ''
+  server: '',
+  onAuthErrorLogout: true
 }
 
 export const credentials = {

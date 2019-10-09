@@ -11,8 +11,7 @@ export async function sFetch (url, options = {}) {
 
   var {
     method = 'GET',
-    body,
-    headers
+    body
   } = options
 
   const Authorization = await sign({
@@ -21,15 +20,18 @@ export async function sFetch (url, options = {}) {
     body
   })
 
+  const headers = {
+    Authorization,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...conf.headers,
+    ...options.headers
+  }
+
   const [res, error] = await fetchHelper([
     `${conf.server}${url}`, {
       method,
-      headers: {
-        Authorization,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...headers
-      },
+      headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body)
     }
   ])
