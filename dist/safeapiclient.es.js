@@ -286,18 +286,8 @@ const plugin = {
   getEndpoint (endpoint) {
     endpoint.realurl = endpoint.url.substr(PROTOCOL_LENGTH);
   },
-  refresh (endpoint, eventHandler) {
-    return sFetch(endpoint.realurl)
-      .then(response => {
-        response.json()
-          .then(eventHandler)
-          .catch(() => {
-            response.text()
-              .then(eventHandler)
-              .catch(eventHandler);
-          });
-      })
-      .catch(eventHandler)
+  async refresh (endpoint, eventHandler) {
+    eventHandler(await sFetch(endpoint.realurl));
   }
 };
 
