@@ -281,6 +281,28 @@ async function toFile () {
   saveAs(blob, `${credentials.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true);
 }
 
+const plugin = {
+  name: 'safeapi',
+  regex: /^safeapi:\/\/./,
+  checkInterval: 30000,
+  threshold: 500,
+  refresh (endpoint, eventHandler) {
+    return sFetch(endpoint.url)
+      .then(response => {
+        response.json()
+          .then(eventHandler)
+          .catch(() => {
+            response.text()
+              .then(eventHandler)
+              .catch(eventHandler);
+          });
+      })
+      .catch(eventHandler)
+  }
+};
+
+onget.registerPlugin(plugin);
+
 exports.conf = conf;
 exports.createKey = createKey;
 exports.credentials = credentials;

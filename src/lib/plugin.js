@@ -1,6 +1,6 @@
 import { sFetch } from './sFetch'
 
-const plugin = {
+export const plugin = {
   name: 'safeapi',
   regex: /^safeapi:\/\/./,
   checkInterval: 30000,
@@ -19,5 +19,3 @@ const plugin = {
       .catch(eventHandler)
   }
 }
-
-export default plugin

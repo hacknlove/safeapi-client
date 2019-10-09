@@ -1,4 +1,4 @@
-import { set, waitUntil } from 'onget';
+import { set, waitUntil, registerPlugin } from 'onget';
 import jose from 'node-jose';
 import fetchHelper from '@hacknlove/fetchhelper';
 import shajs from 'sha.js';
@@ -274,5 +274,27 @@ async function toFile () {
 
   saveAs(blob, `${credentials.uuid}.${(new Date()).toISOString().substr(0, 19).replace(/[^0-9]/g, '')}.key`, undefined, true);
 }
+
+const plugin = {
+  name: 'safeapi',
+  regex: /^safeapi:\/\/./,
+  checkInterval: 30000,
+  threshold: 500,
+  refresh (endpoint, eventHandler) {
+    return sFetch(endpoint.url)
+      .then(response => {
+        response.json()
+          .then(eventHandler)
+          .catch(() => {
+            response.text()
+              .then(eventHandler)
+              .catch(eventHandler);
+          });
+      })
+      .catch(eventHandler)
+  }
+};
+
+registerPlugin(plugin);
 
 export { conf, createKey, credentials, fromFile, fromText, hash, logout, renewKey, sFetch, secret, setPlainPassword, sign, toFile, toText };

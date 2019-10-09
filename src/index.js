@@ -11,7 +11,7 @@ import { sign } from './lib/sign'
 import { toFile } from './lib/toFile'
 import { toText } from './lib/toText'
 
-import { plugin } from './plugin'
+import { plugin } from './lib/plugin'
 import { registerPlugin } from 'onget'
 
 registerPlugin(plugin)
